@@ -1,0 +1,73 @@
+# Numbers. Int is a 64-bit signed integer (overflow is a runtime error).
+# Float is a 64-bit IEEE float. Nothing converts implicitly.
+pub fn abs(x: Int) -> Int
+  if x < 0
+    -x
+  else
+    x
+  end if
+end fn
+
+pub extern fn abs_float(x: Float) -> Float
+
+pub fn min(a: Int, b: Int) -> Int
+  if a < b
+    a
+  else
+    b
+  end if
+end fn
+
+pub fn max(a: Int, b: Int) -> Int
+  if a > b
+    a
+  else
+    b
+  end if
+end fn
+
+pub extern fn min_float(a: Float, b: Float) -> Float
+
+pub extern fn max_float(a: Float, b: Float) -> Float
+
+## Restricts x to [low, high]: math.clamp(x, low: 0, high: 10).
+pub fn clamp(x: Int, low: Int, high: Int) -> Int
+  max(low, min(x, high))
+end fn
+
+pub extern fn to_float(x: Int) -> Float
+
+## Largest Int not greater than x.
+pub extern fn floor(x: Float) -> Int
+
+## Smallest Int not less than x.
+pub extern fn ceil(x: Float) -> Int
+
+## Nearest Int, halves away from zero.
+pub extern fn round(x: Float) -> Int
+
+pub extern fn sqrt(x: Float) -> Float
+
+pub extern fn pow(base: Float, exp: Float) -> Float
+
+## Integer power; exp must be >= 0.
+pub extern fn pow_int(base: Int, exp: Int) -> Int
+
+pub extern fn log(x: Float) -> Float
+
+pub extern fn exp(x: Float) -> Float
+
+pub extern fn sin(x: Float) -> Float
+
+pub extern fn cos(x: Float) -> Float
+
+pub extern fn pi() -> Float
+
+test "math"
+  expect abs(-3) == 3
+  expect clamp(15, low: 0, high: 10) == 10
+  expect round(2.5) == 3
+  expect floor(-1.5) == -2
+  expect pow_int(2, 10) == 1024
+  expect to_float(3) == 3.0
+end test

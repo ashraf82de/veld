@@ -1,0 +1,179 @@
+# Immutable lists. Every "update" returns a new list.
+
+## Number of elements.
+pub extern fn len[T](items: List[T]) -> Int
+
+pub fn is_empty[T](items: List[T]) -> Bool
+  len(items) == 0
+end fn
+
+## The element at index, or None if out of range. Indices start at 0.
+pub extern fn get[T](items: List[T], index: Int) -> Option[T]
+
+pub fn first[T](items: List[T]) -> Option[T]
+  get(items, 0)
+end fn
+
+pub fn last[T](items: List[T]) -> Option[T]
+  get(items, len(items) - 1)
+end fn
+
+## A new list with item appended at the end.
+pub extern fn push[T](items: List[T], item: T) -> List[T]
+
+## A new list with item inserted at the front.
+pub extern fn prepend[T](items: List[T], item: T) -> List[T]
+
+## A new list with the element at index replaced. Panics if index is out of range.
+pub extern fn set_at[T](items: List[T], index: Int, item: T) -> List[T]
+
+## A new list without the element at index. Panics if index is out of range.
+pub extern fn remove_at[T](items: List[T], index: Int) -> List[T]
+
+## Integers from start (inclusive) to stop (exclusive).
+pub extern fn range(start: Int, stop: Int) -> List[Int]
+
+pub extern fn map[T, U](items: List[T], f: Fn(T) -> U) -> List[U]
+
+## Like map, but f also receives the index.
+pub extern fn map_indexed[T, U](items: List[T], f: Fn(Int, T) -> U) -> List[U]
+
+pub extern fn filter[T](items: List[T], keep: Fn(T) -> Bool) -> List[T]
+
+## Combines elements left to right: list.fold(xs, init: 0, step: fn(acc, x) => acc + x).
+pub extern fn fold[T, A](items: List[T], init: A, step: Fn(A, T) -> A) -> A
+
+pub fn flat_map[T, U](items: List[T], f: Fn(T) -> List[U]) -> List[U]
+  var out: List[U] = []
+  for item in items
+    set out = out + f(item)
+  end for
+  out
+end fn
+
+pub fn flatten[T](lists: List[List[T]]) -> List[T]
+  var out: List[T] = []
+  for l in lists
+    set out = out + l
+  end for
+  out
+end fn
+
+## The first element satisfying pred.
+pub fn find[T](items: List[T], pred: Fn(T) -> Bool) -> Option[T]
+  for item in items
+    if pred(item)
+      return Some(item)
+    end if
+  end for
+  None
+end fn
+
+## The index of the first element satisfying pred.
+pub fn find_index[T](items: List[T], pred: Fn(T) -> Bool) -> Option[Int]
+  var i = 0
+  for item in items
+    if pred(item)
+      return Some(i)
+    end if
+    set i = i + 1
+  end for
+  None
+end fn
+
+pub fn any[T](items: List[T], pred: Fn(T) -> Bool) -> Bool
+  for item in items
+    if pred(item)
+      return true
+    end if
+  end for
+  false
+end fn
+
+pub fn all[T](items: List[T], pred: Fn(T) -> Bool) -> Bool
+  for item in items
+    if not pred(item)
+      return false
+    end if
+  end for
+  true
+end fn
+
+pub fn count[T](items: List[T], pred: Fn(T) -> Bool) -> Int
+  var n = 0
+  for item in items
+    if pred(item)
+      set n = n + 1
+    end if
+  end for
+  n
+end fn
+
+pub fn contains[T](items: List[T], item: T) -> Bool
+  any(items, fn(x) => x == item)
+end fn
+
+pub fn index_of[T](items: List[T], item: T) -> Option[Int]
+  find_index(items, fn(x) => x == item)
+end fn
+
+## Sorts Int, Float or Str elements ascending. Stable.
+pub extern fn sort[T](items: List[T]) -> List[T]
+
+## Sorts by a key (Int, Float or Str) ascending. Stable.
+pub extern fn sort_by[T, K](items: List[T], key: Fn(T) -> K) -> List[T]
+
+pub extern fn reverse[T](items: List[T]) -> List[T]
+
+## The first n elements (fewer if the list is shorter).
+pub extern fn take[T](items: List[T], n: Int) -> List[T]
+
+## All but the first n elements.
+pub extern fn drop[T](items: List[T], n: Int) -> List[T]
+
+## Elements from start (inclusive) to stop (exclusive), clamped to the list.
+pub extern fn slice[T](items: List[T], start: Int, stop: Int) -> List[T]
+
+## Removes duplicates, keeping the first occurrence.
+pub extern fn unique[T](items: List[T]) -> List[T]
+
+## A list containing item repeated times.
+pub extern fn repeat[T](item: T, times: Int) -> List[T]
+
+pub fn sum(items: List[Int]) -> Int
+  fold(items, init: 0, step: fn(acc, x) => acc + x)
+end fn
+
+pub fn sum_float(items: List[Float]) -> Float
+  fold(items, init: 0.0, step: fn(acc, x) => acc + x)
+end fn
+
+## The largest element (Int, Float or Str), or None for an empty list.
+pub extern fn max[T](items: List[T]) -> Option[T]
+
+pub extern fn min[T](items: List[T]) -> Option[T]
+
+## Splits into consecutive chunks of size n (the last may be shorter).
+pub extern fn chunks[T](items: List[T], n: Int) -> List[List[T]]
+
+test "list basics"
+  let xs = [3, 1, 2]
+  expect len(xs) == 3
+  expect sort(xs) == [1, 2, 3]
+  expect map(xs, fn(x) => x * 2) == [6, 2, 4]
+  expect filter(xs, fn(x) => x > 1) == [3, 2]
+  expect sum(xs) == 6
+  expect get(xs, 5) == None
+  expect first(xs) == Some(3)
+  expect last(xs) == Some(2)
+  expect find(xs, fn(x) => x < 3) == Some(1)
+  expect contains(xs, 2)
+  expect range(0, 3) == [0, 1, 2]
+  expect flat_map([1, 2], fn(x) => [x, x]) == [1, 1, 2, 2]
+  expect push(xs, 4) == [3, 1, 2, 4]
+  expect xs == [3, 1, 2]
+  expect unique([1, 1, 2]) == [1, 2]
+  expect chunks([1, 2, 3], 2) == [[1, 2], [3]]
+  expect max(xs) == Some(3)
+  expect sort_by(["bb", "a"], fn(s) => s) == ["a", "bb"]
+end test

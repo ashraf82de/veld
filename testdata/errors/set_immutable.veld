@@ -1,0 +1,6 @@
+# expect: E306
+fn f() -> Int
+  let n = 1
+  set n = 2
+  n
+end fn

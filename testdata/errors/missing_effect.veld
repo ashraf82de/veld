@@ -1,0 +1,6 @@
+# expect: E401
+use std.io
+
+fn main() -> Unit
+  io.print("hi")
+end fn

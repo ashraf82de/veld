@@ -1,0 +1,7 @@
+use std.list
+
+pub fn sum_evens(xs: List[Int]) -> Int
+  xs
+    |> list.filter(fn(x) => x % 2 == 0)
+    |> list.sum()
+end fn

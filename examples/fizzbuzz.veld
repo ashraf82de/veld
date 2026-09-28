@@ -1,0 +1,26 @@
+use std.io
+use std.list
+
+## The FizzBuzz word for n.
+fn fizzbuzz(n: Int) -> Str
+  requires n > 0
+  match [n % 3, n % 5]
+    case [0, 0] => "FizzBuzz"
+    case [0, _] => "Fizz"
+    case [_, 0] => "Buzz"
+    case _ => "${n}"
+  end match
+end fn
+
+fn main() -> Unit uses io
+  for n in list.range(1, 16)
+    io.print(fizzbuzz(n))
+  end for
+end fn
+
+test "fizzbuzz words"
+  expect fizzbuzz(3) == "Fizz"
+  expect fizzbuzz(10) == "Buzz"
+  expect fizzbuzz(15) == "FizzBuzz"
+  expect fizzbuzz(7) == "7"
+end test

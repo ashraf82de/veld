@@ -1,0 +1,9 @@
+use solution
+
+test "total"
+  expect solution.total("""[{"price": 2.5, "qty": 2}, {"price": 1, "qty": 3}]""") == Ok(8.0)
+  expect solution.total("[]") == Ok(0.0)
+  expect solution.total("[{") == Err("invalid json")
+  expect solution.total("""[{"price": 1}]""") == Err("bad item")
+  expect solution.total("{}") == Err("bad item")
+end test

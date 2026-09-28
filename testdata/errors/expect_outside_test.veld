@@ -1,0 +1,4 @@
+# expect: E307
+fn f() -> Unit
+  expect 1 == 1
+end fn

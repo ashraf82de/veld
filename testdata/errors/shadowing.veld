@@ -1,0 +1,5 @@
+# expect: E204
+fn f(x: Int) -> Int
+  let x = 2
+  x
+end fn

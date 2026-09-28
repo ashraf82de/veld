@@ -1,0 +1,4 @@
+# expect: E301
+fn f() -> Int
+  "text"
+end fn

@@ -1,0 +1,8 @@
+use solution
+
+test "roman"
+  expect solution.to_roman(4) == Ok("IV")
+  expect solution.to_roman(1994) == Ok("MCMXCIV")
+  expect solution.to_roman(3999) == Ok("MMMCMXCIX")
+  expect solution.to_roman(0) == Err("out of range")
+end test

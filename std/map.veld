@@ -1,0 +1,51 @@
+# Immutable maps with insertion-ordered keys. Every "update" returns a new map.
+# Create one with a literal: let m: Map[Str, Int] = {} or {"a": 1}.
+pub extern fn len[K, V](m: Map[K, V]) -> Int
+
+pub fn is_empty[K, V](m: Map[K, V]) -> Bool
+  len(m) == 0
+end fn
+
+pub extern fn get[K, V](m: Map[K, V], key: K) -> Option[V]
+
+## The value for key, or default: map.get_or(m, key: k, default: 0).
+pub fn get_or[K, V](m: Map[K, V], key: K, default: V) -> V
+  match get(m, key)
+    case Some(v) => v
+    case None => default
+  end match
+end fn
+
+pub extern fn has[K, V](m: Map[K, V], key: K) -> Bool
+
+## A new map with key set to value: map.put(m, key: k, value: v).
+pub extern fn put[K, V](m: Map[K, V], key: K, value: V) -> Map[K, V]
+
+## A new map without key.
+pub extern fn remove[K, V](m: Map[K, V], key: K) -> Map[K, V]
+
+## Keys in insertion order.
+pub extern fn keys[K, V](m: Map[K, V]) -> List[K]
+
+## Values in key insertion order.
+pub extern fn values[K, V](m: Map[K, V]) -> List[V]
+
+## A new map with every entry of b added to a (b wins on conflicts).
+pub extern fn merge[K, V](a: Map[K, V], b: Map[K, V]) -> Map[K, V]
+
+## A new map with f applied to the value at key, using default when absent:
+## map.update(counts, key: w, default: 0, f: fn(n) => n + 1)
+pub fn update[K, V](m: Map[K, V], key: K, default: V, f: Fn(V) -> V) -> Map[K, V]
+  put(m, key: key, value: f(get_or(m, key: key, default: default)))
+end fn
+
+test "map basics"
+  let m: Map[Str, Int] = {"a": 1}
+  let m2 = put(m, key: "b", value: 2)
+  expect get(m2, "b") == Some(2)
+  expect get(m, "b") == None
+  expect keys(m2) == ["a", "b"]
+  expect get_or(m2, key: "z", default: 0) == 0
+  expect update(m2, key: "a", default: 0, f: fn(n) => n + 10) == {"a": 11, "b": 2}
+  expect len(remove(m2, "a")) == 1
+end test

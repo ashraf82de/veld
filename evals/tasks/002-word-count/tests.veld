@@ -1,0 +1,6 @@
+use solution
+
+test "word_count"
+  expect solution.word_count("") == {}
+  expect solution.word_count("The cat the  DOG") == {"the": 2, "cat": 1, "dog": 1}
+end test

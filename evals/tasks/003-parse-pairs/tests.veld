@@ -1,0 +1,12 @@
+use solution
+
+test "valid"
+  expect solution.parse_pairs("a=1;b=22") == Ok({"a": 1, "b": 22})
+  expect solution.parse_pairs(" x = -3 ;; ") == Ok({"x": -3})
+  expect solution.parse_pairs("") == Ok({})
+end test
+
+test "invalid"
+  expect solution.parse_pairs("a=1;b") == Err("bad pair: b")
+  expect solution.parse_pairs("a=x") == Err("bad number: x")
+end test

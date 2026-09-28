@@ -1,0 +1,4 @@
+# expect: E310
+fn f(a: Int, b: Float) -> Float
+  a + b
+end fn

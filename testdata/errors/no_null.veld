@@ -1,0 +1,4 @@
+# expect: E119
+fn f() -> Option[Int]
+  null
+end fn

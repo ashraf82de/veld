@@ -1,0 +1,18 @@
+# Files. Every function needs the `fs` effect.
+
+pub extern fn read(path: Str) -> Result[Str, Str] uses fs
+
+## Creates or replaces the file.
+pub extern fn write(path: Str, content: Str) -> Result[Unit, Str] uses fs
+
+pub extern fn append(path: Str, content: Str) -> Result[Unit, Str] uses fs
+
+pub extern fn exists(path: Str) -> Bool uses fs
+
+## Entry names in a directory, sorted.
+pub extern fn list_dir(path: Str) -> Result[List[Str], Str] uses fs
+
+## Creates a directory and any missing parents.
+pub extern fn make_dir(path: Str) -> Result[Unit, Str] uses fs
+
+pub extern fn remove(path: Str) -> Result[Unit, Str] uses fs

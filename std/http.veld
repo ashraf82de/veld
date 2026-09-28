@@ -1,0 +1,40 @@
+# HTTP server and client. Every function needs the `net` effect.
+use std.json
+
+pub record Request
+  method: Str
+  path: Str
+  query: Map[Str, Str]
+  headers: Map[Str, Str]
+  body: Str
+end record
+
+pub record Response
+  status: Int
+  headers: Map[Str, Str]
+  body: Str
+end record
+
+## Serves HTTP on the port until the process ends, calling handler for every
+## request. Handlers run concurrently; Veld has no shared mutable state.
+pub extern fn serve(port: Int, handler: Fn(Request) -> Response) -> Result[Unit, Str] uses net
+
+pub extern fn get(url: Str) -> Result[Response, Str] uses net
+
+## POST with a body: http.post(url, body: text, content_type: "application/json").
+pub extern fn post(url: Str, body: Str, content_type: Str) -> Result[Response, Str] uses net
+
+## A plain-text response.
+pub fn text(status: Int, body: Str) -> Response
+  Response{status: status, headers: {"content-type": "text/plain; charset=utf-8"}, body: body}
+end fn
+
+## A JSON response.
+pub fn json_response(status: Int, body: Json) -> Response
+  Response{status: status, headers: {"content-type": "application/json"}, body: json.encode(body)}
+end fn
+
+## An HTML response.
+pub fn html(status: Int, body: Str) -> Response
+  Response{status: status, headers: {"content-type": "text/html; charset=utf-8"}, body: body}
+end fn

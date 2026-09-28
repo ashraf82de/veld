@@ -1,0 +1,44 @@
+# Sum types, records, exhaustive matching and pipes.
+use std.io
+use std.list
+use std.str
+
+type Shape
+  case Circle(radius: Float)
+  case Rect(width: Float, height: Float)
+  case Triangle(base: Float, height: Float)
+end type
+
+record Named
+  name: Str
+  shape: Shape
+end record
+
+fn area(s: Shape) -> Float
+  match s
+    case Circle(r) => 3.141592653589793 * r * r
+    case Rect(w, h) => w * h
+    case Triangle(b, h) => 0.5 * b * h
+  end match
+end fn
+
+fn describe(n: Named) -> Str
+  "${n.name}: ${str.fixed(area(n.shape), 2)}"
+end fn
+
+fn main() -> Unit uses io
+  let shapes = [
+    Named{name: "wheel", shape: Circle(1.5)},
+    Named{name: "door", shape: Rect(width: 0.9, height: 2.1)},
+    Named{name: "sail", shape: Triangle(base: 3.0, height: 4.0)},
+  ]
+  let lines = shapes
+    |> list.sort_by(fn(n) => area(n.shape))
+    |> list.map(describe)
+  io.print(str.join(lines, "\n"))
+end fn
+
+test "areas"
+  expect area(Rect(width: 2.0, height: 3.0)) == 6.0
+  expect area(Triangle(base: 2.0, height: 2.0)) == 2.0
+end test

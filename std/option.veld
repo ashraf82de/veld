@@ -1,0 +1,47 @@
+# Helpers for Option[T].
+
+pub fn is_some[T](value: Option[T]) -> Bool
+  match value
+    case Some(_) => true
+    case None => false
+  end match
+end fn
+
+pub fn is_none[T](value: Option[T]) -> Bool
+  not is_some(value)
+end fn
+
+pub fn unwrap_or[T](value: Option[T], default: T) -> T
+  match value
+    case Some(v) => v
+    case None => default
+  end match
+end fn
+
+pub fn map[T, U](value: Option[T], f: Fn(T) -> U) -> Option[U]
+  match value
+    case Some(v) => Some(f(v))
+    case None => None
+  end match
+end fn
+
+pub fn and_then[T, U](value: Option[T], f: Fn(T) -> Option[U]) -> Option[U]
+  match value
+    case Some(v) => f(v)
+    case None => None
+  end match
+end fn
+
+## Converts to a Result, using error when the value is None.
+pub fn ok_or[T, E](value: Option[T], error: E) -> Result[T, E]
+  match value
+    case Some(v) => Ok(v)
+    case None => Err(error)
+  end match
+end fn
+
+test "option"
+  expect unwrap_or(None, 3) == 3
+  expect map(Some(2), fn(x) => x + 1) == Some(3)
+  expect ok_or(None, "missing") == Err("missing")
+end test

@@ -1,0 +1,16 @@
+# Console input and output.
+
+## Prints text followed by a newline to standard output.
+pub extern fn print(text: Str) -> Unit uses io
+
+## Prints text without a trailing newline.
+pub extern fn write(text: Str) -> Unit uses io
+
+## Prints text followed by a newline to standard error.
+pub extern fn eprint(text: Str) -> Unit uses io
+
+## Reads one line from standard input (without the newline). None at end of input.
+pub extern fn read_line() -> Option[Str] uses io
+
+## Reads all remaining standard input.
+pub extern fn read_all() -> Str uses io

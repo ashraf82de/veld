@@ -1,0 +1,4 @@
+# expect: E201
+fn doThing() -> Int
+  1
+end fn

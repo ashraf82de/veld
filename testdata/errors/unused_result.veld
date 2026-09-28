@@ -1,0 +1,8 @@
+# expect: E308
+use std.list
+
+fn f() -> List[Int]
+  var xs = [1]
+  list.push(xs, 2)
+  xs
+end fn

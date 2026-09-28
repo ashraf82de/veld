@@ -1,0 +1,55 @@
+# Helpers for Result[T, E].
+
+pub fn is_ok[T, E](value: Result[T, E]) -> Bool
+  match value
+    case Ok(_) => true
+    case Err(_) => false
+  end match
+end fn
+
+pub fn is_err[T, E](value: Result[T, E]) -> Bool
+  not is_ok(value)
+end fn
+
+pub fn unwrap_or[T, E](value: Result[T, E], default: T) -> T
+  match value
+    case Ok(v) => v
+    case Err(_) => default
+  end match
+end fn
+
+pub fn map[T, U, E](value: Result[T, E], f: Fn(T) -> U) -> Result[U, E]
+  match value
+    case Ok(v) => Ok(f(v))
+    case Err(e) => Err(e)
+  end match
+end fn
+
+pub fn map_err[T, E, F](value: Result[T, E], f: Fn(E) -> F) -> Result[T, F]
+  match value
+    case Ok(v) => Ok(v)
+    case Err(e) => Err(f(e))
+  end match
+end fn
+
+pub fn and_then[T, U, E](value: Result[T, E], f: Fn(T) -> Result[U, E]) -> Result[U, E]
+  match value
+    case Ok(v) => f(v)
+    case Err(e) => Err(e)
+  end match
+end fn
+
+## Converts to an Option, discarding the error.
+pub fn ok[T, E](value: Result[T, E]) -> Option[T]
+  match value
+    case Ok(v) => Some(v)
+    case Err(_) => None
+  end match
+end fn
+
+test "result"
+  let r: Result[Int, Str] = Ok(2)
+  expect map(r, fn(x) => x * 2) == Ok(4)
+  expect unwrap_or(Err("x"), 0) == 0
+  expect ok(r) == Some(2)
+end test

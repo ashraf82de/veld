@@ -1,0 +1,6 @@
+# Clock.
+
+## Milliseconds since the Unix epoch.
+pub extern fn now_ms() -> Int uses time
+
+pub extern fn sleep_ms(ms: Int) -> Unit uses time

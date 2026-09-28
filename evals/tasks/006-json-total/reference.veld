@@ -1,0 +1,21 @@
+use std.json
+use std.option
+
+pub fn total(json_text: Str) -> Result[Float, Str]
+  let items = match json.parse(json_text)
+    case Ok(JArr(items)) => items
+    case Ok(_) => return Err("bad item")
+    case Err(_) => return Err("invalid json")
+  end match
+  var sum = 0.0
+  for item in items
+    let price = json.get(item, "price")
+      |> option.and_then(json.as_num)
+      |> option.ok_or("bad item")?
+    let qty = json.get(item, "qty")
+      |> option.and_then(json.as_num)
+      |> option.ok_or("bad item")?
+    set sum = sum + price * qty
+  end for
+  Ok(sum)
+end fn

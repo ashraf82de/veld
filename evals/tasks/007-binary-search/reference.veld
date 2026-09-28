@@ -1,0 +1,15 @@
+use std.list
+
+pub fn search(xs: List[Int], target: Int) -> Option[Int]
+  var low = 0
+  var high = list.len(xs) - 1
+  while low <= high
+    let mid = (low + high) / 2
+    match list.get(xs, mid)
+      case Some(v) if v == target => return Some(mid)
+      case Some(v) if v < target => set low = mid + 1
+      case _ => set high = mid - 1
+    end match
+  end while
+  None
+end fn

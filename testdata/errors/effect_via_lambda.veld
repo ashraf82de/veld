@@ -1,0 +1,7 @@
+# expect: E401
+use std.io
+use std.list
+
+fn shout(xs: List[Str]) -> List[Unit]
+  list.map(xs, fn(x) => io.print(x))
+end fn

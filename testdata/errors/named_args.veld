@@ -1,0 +1,8 @@
+# expect: E303
+fn clamp(x: Int, low: Int, high: Int) -> Int
+  x
+end fn
+
+fn g() -> Int
+  clamp(5, 0, 10)
+end fn

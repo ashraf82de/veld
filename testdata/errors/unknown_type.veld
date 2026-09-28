@@ -1,0 +1,4 @@
+# expect: E203
+fn f(s: String) -> Int
+  1
+end fn

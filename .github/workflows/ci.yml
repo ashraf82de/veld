@@ -1,0 +1,33 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: vet
+        run: go vet ./...
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - name: test suite
+        run: go test ./...
+      - name: build
+        run: go build -o veld ./cmd/veld
+      - name: veld fmt --check
+        run: ./veld fmt --check std examples evals
+      - name: veld test (std + examples)
+        run: ./veld test std examples
+      - name: eval references
+        run: |
+          mkdir -p /tmp/refs
+          for d in evals/tasks/*/; do cp "$d/reference.veld" "/tmp/refs/$(basename "$d").veld"; done
+          ./veld eval evals/tasks /tmp/refs --json | tee /tmp/eval.json
+          grep -q '"solved": '"$(ls -d evals/tasks/*/ | wc -l)" /tmp/eval.json

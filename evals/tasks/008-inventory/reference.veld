@@ -1,0 +1,43 @@
+use std.list
+
+pub record Item
+  sku: Str
+  qty: Int
+end record
+
+pub type Event
+  case Received(sku: Str, qty: Int)
+  case Shipped(sku: Str, qty: Int)
+end type
+
+pub fn apply_events(stock: List[Item], events: List[Event]) -> Result[List[Item], Str]
+  var items = stock
+  for e in events
+    set items = match e
+      case Received(sku, qty) => adjust(items, sku: sku, delta: qty)
+      case Shipped(sku, qty)
+        let current = list.find(items, fn(i) => i.sku == sku)
+        match current
+          case Some(i) if i.qty >= qty => adjust(items, sku: sku, delta: -qty)
+          case _ => return Err("insufficient ${sku}")
+        end match
+    end match
+  end for
+  Ok(items)
+end fn
+
+fn adjust(items: List[Item], sku: Str, delta: Int) -> List[Item]
+  if list.any(items, fn(i) => i.sku == sku)
+    list.map(items, fn(i) => adjust_one(i, sku: sku, delta: delta))
+  else
+    list.push(items, Item{sku: sku, qty: delta})
+  end if
+end fn
+
+fn adjust_one(i: Item, sku: Str, delta: Int) -> Item
+  if i.sku == sku
+    Item{..i, qty: i.qty + delta}
+  else
+    i
+  end if
+end fn

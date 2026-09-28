@@ -1,0 +1,27 @@
+# Turning titles into URL slugs. Imported as `use lib.slug`.
+use std.list
+use std.str
+
+## Lowercases, keeps ASCII letters and digits, and joins words with "-".
+pub fn slugify(title: Str) -> Str
+  title
+    |> str.lower()
+    |> str.chars()
+    |> list.map(fn(ch) => keep_or_space(ch))
+    |> str.join("")
+    |> str.words()
+    |> str.join("-")
+end fn
+
+fn keep_or_space(ch: Str) -> Str
+  if str.contains("abcdefghijklmnopqrstuvwxyz0123456789", ch)
+    ch
+  else
+    " "
+  end if
+end fn
+
+test "slugify"
+  expect slugify("Hello, World!") == "hello-world"
+  expect slugify("  Veld v0.1: AI-first  ") == "veld-v0-1-ai-first"
+end test

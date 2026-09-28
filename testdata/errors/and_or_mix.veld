@@ -1,0 +1,4 @@
+# expect: E115
+fn f(a: Bool, b: Bool, c: Bool) -> Bool
+  a and b or c
+end fn

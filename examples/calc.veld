@@ -1,0 +1,159 @@
+# A tokenizer, recursive-descent parser and evaluator for arithmetic.
+# veld run examples/calc.veld -- "2 * (3 + 4) - 10 / 5"
+use std.env
+use std.io
+use std.list
+use std.str
+
+type Token
+  case Num(value: Float)
+  case Op(symbol: Str)
+  case LParen
+  case RParen
+end type
+
+type Expr
+  case Lit(value: Float)
+  case Bin(op: Str, left: Expr, right: Expr)
+  case Neg(inner: Expr)
+end type
+
+record Parsed
+  expr: Expr
+  rest: List[Token]
+end record
+
+fn tokenize(src: Str) -> Result[List[Token], Str]
+  var tokens: List[Token] = []
+  var number = ""
+  for ch in str.chars(src + " ")
+    if str.contains("0123456789.", ch)
+      set number = number + ch
+      continue
+    end if
+    if number != ""
+      match str.to_float(number)
+        case Some(f) => set tokens = list.push(tokens, Num(f))
+        case None => return Err("bad number: ${number}")
+      end match
+      set number = ""
+    end if
+    match ch
+      case " " => continue
+      case "(" => set tokens = list.push(tokens, LParen)
+      case ")" => set tokens = list.push(tokens, RParen)
+      case "+" | "-" | "*" | "/" => set tokens = list.push(tokens, Op(ch))
+      case _ => return Err("unexpected character: ${ch}")
+    end match
+  end for
+  Ok(tokens)
+end fn
+
+# Grammar:  expr := term (("+" | "-") term)*
+#           term := unary (("*" | "/") unary)*
+#           unary := "-" unary | atom
+#           atom := number | "(" expr ")"
+fn parse_expr(tokens: List[Token]) -> Result[Parsed, Str]
+  var acc = parse_term(tokens)?
+  while true
+    match acc.rest
+      case [Op("+" | "-"), ..rest]
+        let op = op_of(acc.rest)
+        let right = parse_term(rest)?
+        set acc = Parsed{expr: Bin(op: op, left: acc.expr, right: right.expr), rest: right.rest}
+      case _ => break
+    end match
+  end while
+  Ok(acc)
+end fn
+
+fn parse_term(tokens: List[Token]) -> Result[Parsed, Str]
+  var acc = parse_unary(tokens)?
+  while true
+    match acc.rest
+      case [Op("*" | "/"), ..rest]
+        let op = op_of(acc.rest)
+        let right = parse_unary(rest)?
+        set acc = Parsed{expr: Bin(op: op, left: acc.expr, right: right.expr), rest: right.rest}
+      case _ => break
+    end match
+  end while
+  Ok(acc)
+end fn
+
+fn op_of(tokens: List[Token]) -> Str
+  match tokens
+    case [Op(s), .._] => s
+    case _ => ""
+  end match
+end fn
+
+fn parse_unary(tokens: List[Token]) -> Result[Parsed, Str]
+  match tokens
+    case [Op("-"), ..rest]
+      let inner = parse_unary(rest)?
+      Ok(Parsed{..inner, expr: Neg(inner.expr)})
+    case _ => parse_atom(tokens)
+  end match
+end fn
+
+fn parse_atom(tokens: List[Token]) -> Result[Parsed, Str]
+  match tokens
+    case [Num(n), ..rest] => Ok(Parsed{expr: Lit(n), rest: rest})
+    case [LParen, ..rest]
+      let inner = parse_expr(rest)?
+      match inner.rest
+        case [RParen, ..after] => Ok(Parsed{..inner, rest: after})
+        case _ => Err("expected )")
+      end match
+    case [] => Err("unexpected end of input")
+    case _ => Err("unexpected token")
+  end match
+end fn
+
+fn eval(e: Expr) -> Result[Float, Str]
+  match e
+    case Lit(v) => Ok(v)
+    case Neg(inner) => Ok(-eval(inner)?)
+    case Bin(op, l, r)
+      let a = eval(l)?
+      let b = eval(r)?
+      match op
+        case "+" => Ok(a + b)
+        case "-" => Ok(a - b)
+        case "*" => Ok(a * b)
+        case "/" if b == 0.0 => Err("division by zero")
+        case "/" => Ok(a / b)
+        case _ => Err("unknown operator ${op}")
+      end match
+  end match
+end fn
+
+## Tokenizes, parses and evaluates src.
+fn calculate(src: Str) -> Result[Float, Str]
+  let tokens = tokenize(src)?
+  let parsed = parse_expr(tokens)?
+  if not list.is_empty(parsed.rest)
+    return Err("unexpected trailing input")
+  end if
+  eval(parsed.expr)
+end fn
+
+fn main() -> Result[Unit, Str] uses io, env
+  let src = str.join(env.args(), " ")
+  let value = calculate(src)?
+  io.print("${value}")
+  Ok(Unit)
+end fn
+
+test "precedence and parentheses"
+  expect calculate("2 * (3 + 4) - 10 / 5") == Ok(12.0)
+  expect calculate("-3 + 5") == Ok(2.0)
+  expect calculate("1.5 * 4") == Ok(6.0)
+end test
+
+test "errors"
+  expect calculate("1 / 0") == Err("division by zero")
+  expect calculate("(1 + 2") == Err("expected )")
+  expect calculate("2 $ 3") == Err("unexpected character: $")
+end test

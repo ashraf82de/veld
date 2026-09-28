@@ -1,0 +1,13 @@
+use solution
+
+test "arithmetic"
+  expect solution.run([solution.Push(2), solution.Push(3), solution.Add, solution.Dup, solution.Mul]) == Ok([25])
+  expect solution.run([]) == Ok([])
+  expect solution.run([solution.Push(1), solution.Push(2), solution.Pop]) == Ok([1])
+end test
+
+test "underflow"
+  expect solution.run([solution.Add]) == Err("stack underflow")
+  expect solution.run([solution.Push(1), solution.Mul]) == Err("stack underflow")
+  expect solution.run([solution.Dup]) == Err("stack underflow")
+end test

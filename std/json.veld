@@ -1,0 +1,78 @@
+# JSON. Values use the prelude type Json (JNull, JBool, JNum, JStr, JArr, JObj).
+use std.map
+use std.math
+
+pub extern fn parse(text: Str) -> Result[Json, Str]
+
+## Compact encoding. Object keys keep their insertion order.
+pub extern fn encode(value: Json) -> Str
+
+## Indented encoding (2 spaces).
+pub extern fn pretty(value: Json) -> Str
+
+## The field of an object, or None.
+pub fn get(value: Json, key: Str) -> Option[Json]
+  match value
+    case JObj(fields) => map.get(fields, key)
+    case _ => None
+  end match
+end fn
+
+pub fn as_str(value: Json) -> Option[Str]
+  match value
+    case JStr(s) => Some(s)
+    case _ => None
+  end match
+end fn
+
+pub fn as_num(value: Json) -> Option[Float]
+  match value
+    case JNum(n) => Some(n)
+    case _ => None
+  end match
+end fn
+
+pub fn as_int(value: Json) -> Option[Int]
+  match value
+    case JNum(n) => Some(math.round(n))
+    case _ => None
+  end match
+end fn
+
+pub fn as_bool(value: Json) -> Option[Bool]
+  match value
+    case JBool(b) => Some(b)
+    case _ => None
+  end match
+end fn
+
+pub fn as_list(value: Json) -> Option[List[Json]]
+  match value
+    case JArr(items) => Some(items)
+    case _ => None
+  end match
+end fn
+
+## Builds an object from string keys: json.object({"a": JNum(1.0)}).
+pub fn object(fields: Map[Str, Json]) -> Json
+  JObj(fields)
+end fn
+
+test "json round trip"
+  let text = """{"name":"veld","tags":["a","b"],"n":2,"ok":true,"x":null}"""
+  match parse(text)
+    case Ok(v)
+      expect encode(v) == text
+      expect as_str(option_unwrap(get(v, "name"))) == Some("veld")
+      expect as_int(option_unwrap(get(v, "n"))) == Some(2)
+    case Err(e) => expect e == ""
+  end match
+  expect parse("{bad") != Ok(JNull)
+end test
+
+fn option_unwrap(o: Option[Json]) -> Json
+  match o
+    case Some(v) => v
+    case None => JNull
+  end match
+end fn

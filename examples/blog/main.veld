@@ -1,0 +1,26 @@
+# A multi-module program: local modules are imported by path from this directory.
+use std.io
+use std.list
+use std.str
+use lib.post
+
+fn posts() -> List[post.Post]
+  [
+    post.Post{title: "Why Veld?", body: "Built for agents.", tags: ["design"]},
+    post.Post{title: "Effects, explained", body: "uses io, fs, net...", tags: ["design", "effects"]},
+  ]
+end fn
+
+fn index(ps: List[post.Post]) -> Str
+  ps
+    |> list.map(fn(p) => "- ${p.title} (${post.url(p)}) [${str.join(p.tags, ", ")}]")
+    |> str.join("\n")
+end fn
+
+fn main() -> Unit uses io
+  io.print(index(posts()))
+end fn
+
+test "index lists every post"
+  expect str.lines(index(posts())) |> list.len() == 2
+end test

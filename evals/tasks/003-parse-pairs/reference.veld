@@ -1,0 +1,20 @@
+use std.map
+use std.str
+
+pub fn parse_pairs(text: Str) -> Result[Map[Str, Int], Str]
+  var out: Map[Str, Int] = {}
+  for segment in str.split(text, ";")
+    if str.trim(segment) == ""
+      continue
+    end if
+    match str.split(segment, "=")
+      case [key, value]
+        match str.to_int(value)
+          case Some(n) => set out = map.put(out, key: str.trim(key), value: n)
+          case None => return Err("bad number: ${str.trim(value)}")
+        end match
+      case _ => return Err("bad pair: ${segment}")
+    end match
+  end for
+  Ok(out)
+end fn

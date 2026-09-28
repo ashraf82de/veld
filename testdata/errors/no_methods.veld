@@ -1,0 +1,4 @@
+# expect: E317
+fn f(xs: List[Int]) -> Int
+  xs.len()
+end fn

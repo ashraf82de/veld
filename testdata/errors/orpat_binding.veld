@@ -1,0 +1,6 @@
+# expect: E504
+fn f(x: Option[Int]) -> Int
+  match x
+    case Some(n) | None => 1
+  end match
+end fn

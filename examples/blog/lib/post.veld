@@ -1,0 +1,12 @@
+# The Post record, shared across modules.
+use lib.slug
+
+pub record Post
+  title: Str
+  body: Str
+  tags: List[Str]
+end record
+
+pub fn url(p: Post) -> Str
+  "/posts/${slug.slugify(p.title)}"
+end fn

@@ -1,0 +1,13 @@
+# expect: E501
+type Light
+  case Red
+  case Yellow
+  case Green
+end type
+
+fn next(l: Light) -> Light
+  match l
+    case Red => Green
+    case Green => Yellow
+  end match
+end fn

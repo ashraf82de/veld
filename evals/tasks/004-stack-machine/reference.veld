@@ -1,0 +1,46 @@
+use std.list
+
+pub type Instr
+  case Push(value: Int)
+  case Add
+  case Mul
+  case Dup
+  case Pop
+end type
+
+pub fn run(program: List[Instr]) -> Result[List[Int], Str]
+  var stack: List[Int] = []
+  for instr in program
+    set stack = step(stack, instr)?
+  end for
+  Ok(stack)
+end fn
+
+fn step(stack: List[Int], instr: Instr) -> Result[List[Int], Str]
+  let n = list.len(stack)
+  let rest2 = list.take(stack, n - 2)
+  let top2 = list.drop(stack, n - 2)
+  match instr
+    case Push(v) => Ok(list.push(stack, v))
+    case Add | Mul
+      match top2
+        case [a, b]
+          if instr == Add
+            Ok(list.push(rest2, a + b))
+          else
+            Ok(list.push(rest2, a * b))
+          end if
+        case _ => Err("stack underflow")
+      end match
+    case Dup
+      match stack
+        case [.._, top] => Ok(list.push(stack, top))
+        case _ => Err("stack underflow")
+      end match
+    case Pop
+      match stack
+        case [..rest, _] => Ok(rest)
+        case _ => Err("stack underflow")
+      end match
+  end match
+end fn

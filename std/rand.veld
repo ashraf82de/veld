@@ -1,0 +1,9 @@
+# Randomness.
+
+## A random Int in [low, high).
+pub extern fn int(low: Int, high: Int) -> Int uses rand
+
+## A random Float in [0.0, 1.0).
+pub extern fn float() -> Float uses rand
+
+pub extern fn shuffle[T](items: List[T]) -> List[T] uses rand

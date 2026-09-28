@@ -1,0 +1,6 @@
+# expect: E325
+use std.str
+
+fn f(s: Str) -> Int
+  str.to_int(s)?
+end fn

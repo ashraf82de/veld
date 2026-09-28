@@ -1,0 +1,97 @@
+# A small JSON HTTP API. Run: veld run examples/todo_api.veld
+# Then: curl localhost:8080/todos   curl -X POST localhost:8080/todos -d '{"title":"write docs"}'
+# State lives in a file, since Veld has no shared mutable memory.
+use std.fs
+use std.http
+use std.io
+use std.json
+use std.list
+use std.math
+
+record Todo
+  id: Int
+  title: Str
+  done: Bool
+end record
+
+fn db_path() -> Str
+  "todos.json"
+end fn
+
+fn to_json(t: Todo) -> Json
+  JObj({"id": JNum(math.to_float(t.id)), "title": JStr(t.title), "done": JBool(t.done)})
+end fn
+
+fn from_json(j: Json) -> Option[Todo]
+  let id = json.get(j, "id")?
+  let title = json.get(j, "title")?
+  let done = json.get(j, "done")?
+  Some(Todo{id: json.as_int(id)?, title: json.as_str(title)?, done: json.as_bool(done)?})
+end fn
+
+fn load() -> List[Todo] uses fs
+  match fs.read(db_path())
+    case Err(_) => []
+    case Ok(text)
+      match json.parse(text)
+        case Ok(JArr(items)) => list.flat_map(items, fn(j) => option_list(from_json(j)))
+        case _ => []
+      end match
+  end match
+end fn
+
+fn option_list(o: Option[Todo]) -> List[Todo]
+  match o
+    case Some(t) => [t]
+    case None => []
+  end match
+end fn
+
+fn save(todos: List[Todo]) -> Result[Unit, Str] uses fs
+  fs.write(db_path(), json.pretty(JArr(list.map(todos, to_json))))
+end fn
+
+fn next_id(todos: List[Todo]) -> Int
+  list.fold(todos, init: 0, step: fn(m, t) => math.max(m, t.id)) + 1
+end fn
+
+fn create(body: Str) -> http.Response uses fs
+  let title = match json.parse(body)
+    case Ok(j) => json.get(j, "title")
+    case Err(_) => None
+  end match
+  match title
+    case Some(JStr(t))
+      let todos = load()
+      let todo = Todo{id: next_id(todos), title: t, done: false}
+      match save(list.push(todos, todo))
+        case Ok(_) => http.json_response(201, to_json(todo))
+        case Err(e) => http.text(500, e)
+      end match
+    case _ => http.text(400, "expected JSON body {\"title\": \"...\"}")
+  end match
+end fn
+
+fn handle(req: http.Request) -> http.Response uses fs
+  match [req.method, req.path]
+    case ["GET", "/todos"] => http.json_response(200, JArr(list.map(load(), to_json)))
+    case ["POST", "/todos"] => create(req.body)
+    case ["GET", "/"] => http.text(200, "todo api: GET/POST /todos")
+    case _ => http.text(404, "not found")
+  end match
+end fn
+
+fn main() -> Result[Unit, Str] uses io, fs, net
+  io.print("serving on :8080")
+  http.serve(8080, handle)
+end fn
+
+test "json round trip"
+  let t = Todo{id: 3, title: "x", done: true}
+  expect from_json(to_json(t)) == Some(t)
+end test
+
+test "next id"
+  expect next_id([]) == 1
+  expect next_id([Todo{id: 7, title: "a", done: false}]) == 8
+end test

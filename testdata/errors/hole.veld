@@ -1,0 +1,4 @@
+# expect: H001
+fn f(x: Int) -> Str
+  ???
+end fn

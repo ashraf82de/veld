@@ -1,0 +1,48 @@
+# Reads a text file and prints the most frequent words. Needs `fs` and `io`.
+# veld run examples/wordfreq.veld -- examples/wordfreq.veld
+use std.env
+use std.fs
+use std.io
+use std.list
+use std.map
+use std.str
+
+record Count
+  word: Str
+  n: Int
+end record
+
+## Word counts in text, lowercased, most frequent first (ties alphabetical).
+fn frequencies(text: Str) -> List[Count]
+  let words = text
+    |> str.lower()
+    |> str.replace(old: ",", new: " ")
+    |> str.replace(old: ".", new: " ")
+    |> str.words()
+  var counts: Map[Str, Int] = {}
+  for w in words
+    set counts = map.update(counts, key: w, default: 0, f: fn(n) => n + 1)
+  end for
+  map.keys(counts)
+    |> list.map(fn(w) => Count{word: w, n: map.get_or(counts, key: w, default: 0)})
+    |> list.sort_by(fn(c) => c.word)
+    |> list.sort_by(fn(c) => -c.n)
+end fn
+
+fn main() -> Result[Unit, Str] uses io, fs, env
+  let path = match list.first(env.args())
+    case Some(p) => p
+    case None => return Err("usage: wordfreq <file>")
+  end match
+  let text = fs.read(path)?
+  for c in list.take(frequencies(text), 5)
+    io.print("${str.pad_left("${c.n}", width: 4, fill: " ")}  ${c.word}")
+  end for
+  Ok(Unit)
+end fn
+
+test "frequencies"
+  let counts = frequencies("the cat. The dog, the end")
+  expect list.first(counts) == Some(Count{word: "the", n: 3})
+  expect list.len(counts) == 4
+end test

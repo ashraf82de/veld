@@ -1,0 +1,92 @@
+# Text. Strings are UTF-8; lengths and indices count Unicode code points.
+
+## Number of characters (code points).
+pub extern fn len(text: Str) -> Int
+
+## True if the string has no characters.
+pub fn is_empty(text: Str) -> Bool
+  len(text) == 0
+end fn
+
+## Splits on every occurrence of sep. split("a,b", ",") == ["a", "b"].
+pub extern fn split(text: Str, sep: Str) -> List[Str]
+
+## Joins parts with sep between them.
+pub extern fn join(parts: List[Str], sep: Str) -> Str
+
+## Splits into lines, accepting \n and \r\n. A trailing newline does not add an empty line.
+pub extern fn lines(text: Str) -> List[Str]
+
+## Splits on runs of whitespace, dropping empty pieces.
+pub extern fn words(text: Str) -> List[Str]
+
+## Removes leading and trailing whitespace.
+pub extern fn trim(text: Str) -> Str
+
+pub extern fn trim_start(text: Str) -> Str
+
+pub extern fn trim_end(text: Str) -> Str
+
+pub extern fn upper(text: Str) -> Str
+
+pub extern fn lower(text: Str) -> Str
+
+pub extern fn contains(text: Str, part: Str) -> Bool
+
+pub extern fn starts_with(text: Str, prefix: Str) -> Bool
+
+pub extern fn ends_with(text: Str, suffix: Str) -> Bool
+
+## Replaces every occurrence: str.replace(s, old: "a", new: "b").
+pub extern fn replace(text: Str, old: Str, new: Str) -> Str
+
+## Characters from start (inclusive) to stop (exclusive), clamped to the string.
+pub extern fn slice(text: Str, start: Int, stop: Int) -> Str
+
+## Index of the first occurrence of part, in characters.
+pub extern fn index_of(text: Str, part: Str) -> Option[Int]
+
+## Number of non-overlapping occurrences of part.
+pub extern fn count(text: Str, part: Str) -> Int
+
+## Parses a base-10 integer, allowing a leading - and surrounding whitespace.
+pub extern fn to_int(text: Str) -> Option[Int]
+
+## Parses a decimal number.
+pub extern fn to_float(text: Str) -> Option[Float]
+
+## The characters of the string, each as a one-character Str.
+pub extern fn chars(text: Str) -> List[Str]
+
+## The Unicode code point of the first character.
+pub extern fn code(ch: Str) -> Option[Int]
+
+## The one-character string for a Unicode code point.
+pub extern fn from_code(code: Int) -> Str
+
+pub extern fn repeat(text: Str, times: Int) -> Str
+
+pub extern fn reverse(text: Str) -> Str
+
+## Pads on the left to width characters: str.pad_left(s, width: 5, fill: "0").
+pub extern fn pad_left(text: Str, width: Int, fill: Str) -> Str
+
+pub extern fn pad_right(text: Str, width: Int, fill: Str) -> Str
+
+## Formats a float with a fixed number of decimals.
+pub extern fn fixed(value: Float, decimals: Int) -> Str
+
+test "str basics"
+  expect split("a,b,c", ",") == ["a", "b", "c"]
+  expect join(["a", "b"], "-") == "a-b"
+  expect trim("  x ") == "x"
+  expect slice("héllo", start: 1, stop: 3) == "él"
+  expect len("héllo") == 5
+  expect to_int(" -42 ") == Some(-42)
+  expect to_int("4x") == None
+  expect pad_left("7", width: 3, fill: "0") == "007"
+  expect replace("aXbX", old: "X", new: "-") == "a-b-"
+  expect is_empty("")
+  expect fixed(3.14159, 2) == "3.14"
+  expect words(" a  b\tc ") == ["a", "b", "c"]
+end test

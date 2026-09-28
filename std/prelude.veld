@@ -1,0 +1,27 @@
+# The prelude is visible in every module without a `use`.
+
+## An optional value: `Some(value)` or `None`. Veld has no null.
+pub type Option[T]
+  case Some(value: T)
+  case None
+end type
+
+## The outcome of an operation that can fail. Propagate errors with `?`.
+pub type Result[T, E]
+  case Ok(value: T)
+  case Err(error: E)
+end type
+
+## A JSON document. Parse with json.parse, render with json.encode.
+pub type Json
+  case JNull
+  case JBool(value: Bool)
+  case JNum(value: Float)
+  case JStr(value: Str)
+  case JArr(items: List[Json])
+  case JObj(fields: Map[Str, Json])
+end type
+
+## Stops the program with an error message. Only for states that cannot happen;
+## expected failures should return a Result.
+pub extern fn panic[T](message: Str) -> T

@@ -1,0 +1,9 @@
+use solution
+
+test "events"
+  let stock = [solution.Item{sku: "a", qty: 2}]
+  let events = [solution.Received(sku: "b", qty: 5), solution.Shipped(sku: "a", qty: 2)]
+  expect solution.apply_events(stock, events) == Ok([solution.Item{sku: "a", qty: 0}, solution.Item{sku: "b", qty: 5}])
+  expect solution.apply_events(stock, [solution.Shipped(sku: "a", qty: 3)]) == Err("insufficient a")
+  expect solution.apply_events([], [solution.Shipped(sku: "z", qty: 1)]) == Err("insufficient z")
+end test

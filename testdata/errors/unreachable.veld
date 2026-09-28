@@ -1,0 +1,7 @@
+# expect: W501
+fn f(x: Bool) -> Int
+  match x
+    case _ => 1
+    case true => 2
+  end match
+end fn

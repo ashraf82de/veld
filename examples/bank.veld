@@ -1,0 +1,66 @@
+# Error handling with Result and `?`, contracts, and immutable updates.
+use std.io
+
+record Account
+  owner: Str
+  balance: Int
+end record
+
+type BankError
+  case Insufficient(needed: Int, available: Int)
+  case InvalidAmount(amount: Int)
+end type
+
+fn withdraw(acct: Account, amount: Int) -> Result[Account, BankError]
+  if amount <= 0
+    return Err(InvalidAmount(amount))
+  end if
+  if amount > acct.balance
+    return Err(Insufficient(needed: amount, available: acct.balance))
+  end if
+  Ok(Account{..acct, balance: acct.balance - amount})
+end fn
+
+fn deposit(acct: Account, amount: Int) -> Result[Account, BankError]
+  if amount <= 0
+    return Err(InvalidAmount(amount))
+  end if
+  Ok(Account{..acct, balance: acct.balance + amount})
+end fn
+
+## Moves money between two accounts, failing without side effects.
+fn transfer(from: Account, to: Account, amount: Int) -> Result[List[Account], BankError]
+  ensures true
+  let new_from = withdraw(from, amount)?
+  let new_to = deposit(to, amount)?
+  Ok([new_from, new_to])
+end fn
+
+fn explain(e: BankError) -> Str
+  match e
+    case Insufficient(needed, available) => "need ${needed}, have ${available}"
+    case InvalidAmount(a) => "invalid amount ${a}"
+  end match
+end fn
+
+fn main() -> Unit uses io
+  let alice = Account{owner: "alice", balance: 100}
+  let bob = Account{owner: "bob", balance: 20}
+  match transfer(alice, to: bob, amount: 30)
+    case Ok([a, b]) => io.print("${a.owner}=${a.balance} ${b.owner}=${b.balance}")
+    case Ok(_) => io.print("unexpected")
+    case Err(e) => io.print("failed: ${explain(e)}")
+  end match
+  match transfer(bob, to: alice, amount: 500)
+    case Ok(_) => io.print("unexpected")
+    case Err(e) => io.print("failed: ${explain(e)}")
+  end match
+end fn
+
+test "transfer moves money"
+  let a = Account{owner: "a", balance: 10}
+  let b = Account{owner: "b", balance: 0}
+  expect transfer(a, to: b, amount: 4) == Ok([Account{owner: "a", balance: 6}, Account{owner: "b", balance: 4}])
+  expect transfer(a, to: b, amount: 40) == Err(Insufficient(needed: 40, available: 10))
+  expect transfer(a, to: b, amount: -1) == Err(InvalidAmount(-1))
+end test

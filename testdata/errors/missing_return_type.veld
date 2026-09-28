@@ -1,0 +1,4 @@
+# expect: E108
+fn f(x: Int)
+  x
+end fn

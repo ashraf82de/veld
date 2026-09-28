@@ -1,0 +1,9 @@
+# expect: E322
+record P
+  x: Int
+  y: Int
+end record
+
+fn f() -> P
+  P{x: 1}
+end fn

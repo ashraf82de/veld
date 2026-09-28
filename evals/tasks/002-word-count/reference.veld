@@ -1,0 +1,10 @@
+use std.map
+use std.str
+
+pub fn word_count(text: Str) -> Map[Str, Int]
+  var counts: Map[Str, Int] = {}
+  for w in str.words(str.lower(text))
+    set counts = map.update(counts, key: w, default: 0, f: fn(n) => n + 1)
+  end for
+  counts
+end fn

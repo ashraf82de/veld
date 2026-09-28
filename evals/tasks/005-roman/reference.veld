@@ -1,0 +1,39 @@
+use std.list
+
+record Numeral
+  value: Int
+  symbol: Str
+end record
+
+fn numerals() -> List[Numeral]
+  [
+    Numeral{value: 1000, symbol: "M"},
+    Numeral{value: 900, symbol: "CM"},
+    Numeral{value: 500, symbol: "D"},
+    Numeral{value: 400, symbol: "CD"},
+    Numeral{value: 100, symbol: "C"},
+    Numeral{value: 90, symbol: "XC"},
+    Numeral{value: 50, symbol: "L"},
+    Numeral{value: 40, symbol: "XL"},
+    Numeral{value: 10, symbol: "X"},
+    Numeral{value: 9, symbol: "IX"},
+    Numeral{value: 5, symbol: "V"},
+    Numeral{value: 4, symbol: "IV"},
+    Numeral{value: 1, symbol: "I"},
+  ]
+end fn
+
+pub fn to_roman(n: Int) -> Result[Str, Str]
+  if n < 1 or n > 3999
+    return Err("out of range")
+  end if
+  var rest = n
+  var out = ""
+  for num in numerals()
+    while rest >= num.value
+      set out = out + num.symbol
+      set rest = rest - num.value
+    end while
+  end for
+  Ok(out)
+end fn

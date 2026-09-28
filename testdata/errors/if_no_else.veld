@@ -1,0 +1,6 @@
+# expect: E324
+fn f(c: Bool) -> Int
+  if c
+    1
+  end if
+end fn

@@ -1,0 +1,20 @@
+use std.io
+use std.list
+use std.map
+use std.str
+
+fn main() -> Unit uses io
+  var counts: Map[Str, Int] = {}
+  for i in list.range(0, 300000)
+    let key = "w${i % 5000}"
+    set counts = map.update(counts, key: key, default: 0, f: fn(n) => n + 1)
+  end for
+  let top = map.keys(counts)
+    |> list.sort()
+    |> list.take(3)
+  io.print("distinct: ${map.len(counts)} first: ${str.join(top, ",")}")
+end fn
+
+test "words"
+  expect 1 == 1
+end test

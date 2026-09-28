@@ -1,0 +1,26 @@
+use std.io
+use std.list
+
+fn sieve(n: Int) -> Int
+  var flags: List[Bool] = list.repeat(true, times: n + 1)
+  var count = 0
+  for i in list.range(2, n + 1)
+    if list.get(flags, i) == Some(true)
+      set count = count + 1
+      var j = i * i
+      while j <= n
+        set flags = list.set_at(flags, index: j, item: false)
+        set j = j + i
+      end while
+    end if
+  end for
+  count
+end fn
+
+fn main() -> Unit uses io
+  io.print("primes below 2000000: ${sieve(2000000)}")
+end fn
+
+test "sieve"
+  expect sieve(100) == 25
+end test

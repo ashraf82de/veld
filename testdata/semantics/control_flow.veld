@@ -1,0 +1,226 @@
+use std.list
+use std.option
+use std.str
+
+## `?` in every position an expression can appear.
+fn parse(s: Str) -> Result[Int, Str]
+  str.to_int(s) |> option.ok_or("bad: ${s}")
+end fn
+
+fn add_parsed(a: Str, b: Str) -> Result[Int, Str]
+  Ok(parse(a)? + parse(b)?)
+end fn
+
+fn in_call_args(a: Str, b: Str) -> Result[Int, Str]
+  Ok(list.sum([parse(a)?, parse(b)?, 10]))
+end fn
+
+fn in_interpolation(a: Str) -> Result[Str, Str]
+  Ok("value=${parse(a)?}")
+end fn
+
+fn in_condition(a: Str) -> Result[Bool, Str]
+  if parse(a)? > 5
+    Ok(true)
+  else
+    Ok(false)
+  end if
+end fn
+
+fn in_and(a: Str) -> Result[Bool, Str]
+  Ok(true and parse(a)? == 3)
+end fn
+
+fn in_record(a: Str) -> Result[Point, Str]
+  Ok(Point{x: parse(a)?, y: 2})
+end fn
+
+record Point
+  x: Int
+  y: Int
+end record
+
+test "question mark inside expressions"
+  expect add_parsed("1", "2") == Ok(3)
+  expect add_parsed("1", "x") == Err("bad: x")
+  expect add_parsed("y", "x") == Err("bad: y")
+  expect in_call_args("1", "2") == Ok(13)
+  expect in_call_args("1", "?") == Err("bad: ?")
+  expect in_interpolation("7") == Ok("value=7")
+  expect in_interpolation("q") == Err("bad: q")
+  expect in_condition("9") == Ok(true)
+  expect in_condition("1") == Ok(false)
+  expect in_condition("z") == Err("bad: z")
+  expect in_and("3") == Ok(true)
+  expect in_and("4") == Ok(false)
+  expect in_and("no") == Err("bad: no")
+  expect in_record("5") == Ok(Point{x: 5, y: 2})
+  expect in_record("_") == Err("bad: _")
+end test
+
+## return, break and continue.
+fn first_negative(xs: List[Int]) -> Option[Int]
+  for x in xs
+    if x < 0
+      return Some(x)
+    end if
+  end for
+  None
+end fn
+
+fn sum_until_stop(xs: List[Int]) -> Int
+  var total = 0
+  for x in xs
+    if x == 0
+      continue
+    end if
+    if x < 0
+      break
+    end if
+    set total = total + x
+  end for
+  total
+end fn
+
+fn nested_loops() -> Int
+  var count = 0
+  for i in list.range(0, 5)
+    for j in list.range(0, 5)
+      if j > i
+        break
+      end if
+      set count = count + 1
+    end for
+    if i == 3
+      break
+    end if
+  end for
+  count
+end fn
+
+fn while_break() -> Int
+  var n = 0
+  while true
+    set n = n + 1
+    if n >= 7
+      break
+    end if
+  end while
+  n
+end fn
+
+fn return_from_match(o: Option[Int]) -> Str
+  let v = match o
+    case Some(n) => n
+    case None => return "nothing"
+  end match
+  "got ${v}"
+end fn
+
+test "return break continue"
+  expect first_negative([3, 4, -2, -5]) == Some(-2)
+  expect first_negative([3, 4]) == None
+  expect sum_until_stop([1, 0, 2, 3, -1, 100]) == 6
+  expect nested_loops() == 10
+  expect while_break() == 7
+  expect return_from_match(Some(4)) == "got 4"
+  expect return_from_match(None) == "nothing"
+end test
+
+## Closures share `var`s with their creator and capture `let`s by value.
+fn make_adders() -> List[Fn(Int) -> Int]
+  var out: List[Fn(Int) -> Int] = []
+  for i in list.range(0, 3)
+    set out = list.push(out, fn(x) => x + i)
+  end for
+  out
+end fn
+
+fn counter_demo() -> Int
+  var count = 0
+  let bump = fn() -> Unit
+    set count = count + 1
+  end fn
+  bump()
+  bump()
+  bump()
+  count
+end fn
+
+fn return_inside_lambda(xs: List[Int]) -> List[Int]
+  list.map(
+    xs,
+    fn(x) -> Int
+      if x > 2
+        return 100
+      end if
+      x
+    end fn,
+  )
+end fn
+
+fn nested_capture(a: Int) -> Int
+  let outer = fn(b: Int) -> Int
+    let inner = fn(c: Int) => a + b + c
+    inner(10)
+  end fn
+  outer(20)
+end fn
+
+test "closures"
+  let adders = make_adders()
+  expect list.map(adders, fn(f) => f(10)) == [10, 11, 12]
+  expect counter_demo() == 3
+  expect return_inside_lambda([1, 2, 3, 4]) == [1, 2, 100, 100]
+  expect nested_capture(1) == 31
+end test
+
+## Patterns and guards.
+fn classify(xs: List[Int]) -> Str
+  match xs
+    case [] => "empty"
+    case [x] if x < 0 => "one negative"
+    case [_] => "one"
+    case [first, ..rest] if first == 0 => "zero then ${list.len(rest)}"
+    case [_, .._] => "many"
+  end match
+end fn
+
+test "patterns"
+  expect classify([]) == "empty"
+  expect classify([-1]) == "one negative"
+  expect classify([5]) == "one"
+  expect classify([0, 1, 2]) == "zero then 2"
+  expect classify([1, 2]) == "many"
+end test
+
+## Deep and mutual recursion.
+fn is_even(n: Int) -> Bool
+  if n == 0
+    true
+  else
+    is_odd(n - 1)
+  end if
+end fn
+
+fn is_odd(n: Int) -> Bool
+  if n == 0
+    false
+  else
+    is_even(n - 1)
+  end if
+end fn
+
+fn sum_to(n: Int) -> Int
+  if n == 0
+    0
+  else
+    n + sum_to(n - 1)
+  end if
+end fn
+
+test "recursion"
+  expect is_even(1000)
+  expect not is_odd(1000)
+  expect sum_to(20000) == 200010000
+end test

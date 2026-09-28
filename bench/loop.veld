@@ -3,7 +3,7 @@ use std.io
 fn main() -> Unit uses io
   var total = 0
   var i = 0
-  while i < 1000000
+  while i < 20000000
     if i % 3 == 0 or i % 5 == 0
       set total = total + i
     end if

@@ -18,7 +18,6 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/ashraf82de/veld/internal/diag"
 	"github.com/ashraf82de/veld/internal/types"
 )
 
@@ -37,13 +36,6 @@ func (in *Interp) err(msg string) Value {
 }
 func (in *Interp) ctor(name string, fields ...Value) Value {
 	return &Variant{Ctor: in.Prog.Prelude.Ctors[name], Fields: fields}
-}
-
-func (th *Thread) here() diag.Span {
-	if len(th.stack) > 0 {
-		return th.stack[len(th.stack)-1].Span
-	}
-	return diag.Span{}
 }
 
 func (th *Thread) nativeFail(format string, args ...any) {
@@ -266,7 +258,7 @@ func natives() map[string]*Native {
 		l := a[0].(List)
 		out := make([]Value, 0, l.Len())
 		l.Range(func(_ int, x Value) bool {
-			out = append(out, th.callValue(a[1], []Value{x}, th.here()))
+			out = append(out, th.callValue(a[1], []Value{x}, th.site()))
 			return true
 		})
 		return NewList(out)
@@ -275,7 +267,7 @@ func natives() map[string]*Native {
 		l := a[0].(List)
 		out := make([]Value, 0, l.Len())
 		l.Range(func(i int, x Value) bool {
-			out = append(out, th.callValue(a[1], []Value{int64(i), x}, th.here()))
+			out = append(out, th.callValue(a[1], []Value{int64(i), x}, th.site()))
 			return true
 		})
 		return NewList(out)
@@ -283,7 +275,7 @@ func natives() map[string]*Native {
 	def("list.filter", func(th *Thread, a []Value) Value {
 		var out []Value
 		a[0].(List).Range(func(_ int, x Value) bool {
-			if th.callValue(a[1], []Value{x}, th.here()) == true {
+			if th.callValue(a[1], []Value{x}, th.site()) == true {
 				out = append(out, x)
 			}
 			return true
@@ -293,14 +285,14 @@ func natives() map[string]*Native {
 	def("list.fold", func(th *Thread, a []Value) Value {
 		acc := a[1]
 		a[0].(List).Range(func(_ int, x Value) bool {
-			acc = th.callValue(a[2], []Value{acc, x}, th.here())
+			acc = th.callValue(a[2], []Value{acc, x}, th.site())
 			return true
 		})
 		return acc
 	})
 	def("list.sort", func(th *Thread, a []Value) Value { return sortValues(a[0].(List), nil) })
 	def("list.sort_by", func(th *Thread, a []Value) Value {
-		return sortValues(a[0].(List), func(v Value) Value { return th.callValue(a[1], []Value{v}, th.here()) })
+		return sortValues(a[0].(List), func(v Value) Value { return th.callValue(a[1], []Value{v}, th.site()) })
 	})
 	def("list.reverse", func(th *Thread, a []Value) Value {
 		xs := a[0].(List).ToSlice()
@@ -749,9 +741,9 @@ func (th *Thread) serve(port int64, handler Value) Value {
 		}
 		req := &Record{Type: reqType, Fields: []Value{r.Method, r.URL.Path, query, headers, string(body)}}
 		t := th.in.NewThread(th.mod)
-		t.stack = append([]Frame{}, th.stack...)
+		t.stack = append([]stackEntry(nil), th.stack...)
 		var resp *Record
-		err := t.Protect(func() { resp = t.callValue(handler, []Value{req}, th.here()).(*Record) })
+		err := t.Protect(func() { resp = t.callValue(handler, []Value{req}, th.site()).(*Record) })
 		if err != nil {
 			th.in.errOut("http handler error: " + err.Error() + "\n")
 			http.Error(w, "internal server error", 500)

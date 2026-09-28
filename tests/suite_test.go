@@ -80,6 +80,14 @@ func TestExamples(t *testing.T) {
 	}
 }
 
+// TestSemantics runs the runtime-behaviour tests in testdata/semantics (control
+// flow, closures, patterns, recursion) so backend changes cannot alter them.
+func TestSemantics(t *testing.T) {
+	for _, f := range veldFiles(t, "testdata/semantics") {
+		t.Run(filepath.Base(f), func(t *testing.T) { runTests(t, project.Load("", []string{f})) })
+	}
+}
+
 var expectRe = regexp.MustCompile(`^# expect: (.*)$`)
 
 func TestDiagnostics(t *testing.T) {
@@ -145,7 +153,7 @@ func TestFixesRepair(t *testing.T) {
 }
 
 func TestFormatCanonical(t *testing.T) {
-	for _, f := range veldFiles(t, "std", "examples", "evals") {
+	for _, f := range veldFiles(t, "std", "examples", "evals", "testdata/semantics") {
 		t.Run(f, func(t *testing.T) {
 			src, _ := os.ReadFile(f)
 			ds := &diag.List{}

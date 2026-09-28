@@ -9,7 +9,7 @@ fn fib(n: Int) -> Int
 end fn
 
 fn main() -> Unit uses io
-  io.print("fib(27) = ${fib(27)}")
+  io.print("fib(32) = ${fib(32)}")
 end fn
 
 test "fib"

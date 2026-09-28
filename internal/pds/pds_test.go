@@ -189,3 +189,80 @@ func BenchmarkMapPut(b *testing.B) {
 		}
 	}
 }
+
+func TestVecViews(t *testing.T) {
+	var model []any
+	for i := 0; i < 5000; i++ {
+		model = append(model, i)
+	}
+	v := FromSlice(model)
+	// Repeatedly drop the head, like `case [first, ..rest]` recursion.
+	for len(model) > 0 {
+		checkVec(t, v, model)
+		v = v.Slice(1, v.Len())
+		model = model[1:]
+		if len(model) < 4500 && len(model)%97 != 0 {
+			continue
+		}
+	}
+	base := FromSlice([]any{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40})
+	win := base.Slice(2, 40)
+	pushed := win.Push("x").Set(0, "y")
+	if win.Get(0) != 3 || win.Len() != 38 || pushed.Get(0) != "y" || pushed.Get(38) != "x" || base.Get(2) != 3 {
+		t.Fatal("views must behave as immutable values")
+	}
+}
+
+// TestVecOwnership drives PushMut/SetMut with random freezes against a model:
+// a frozen snapshot must never change, whatever happens to the owned copy.
+func TestVecOwnership(t *testing.T) {
+	rng := rand.New(rand.NewSource(3))
+	for round := 0; round < 40; round++ {
+		var model []any
+		v := Empty()
+		type snap struct {
+			v     *Vec
+			model []any
+		}
+		var snaps []snap
+		for step := 0; step < 3000; step++ {
+			switch rng.Intn(10) {
+			case 0: // observe: freeze and remember
+				if v.Owned() {
+					v.Freeze()
+				}
+				snaps = append(snaps, snap{v, append([]any(nil), model...)})
+			case 1, 2, 3, 4, 5:
+				if !v.Owned() {
+					v = v.Edit()
+				}
+				x := rng.Int()
+				v.PushMut(x)
+				model = append(model, x)
+			default:
+				if len(model) > 0 {
+					if !v.Owned() {
+						v = v.Edit()
+					}
+					i, x := rng.Intn(len(model)), rng.Int()
+					v.SetMut(i, x)
+					model[i] = x
+				}
+			}
+		}
+		checkVec(t, v, model)
+		for _, s := range snaps {
+			checkVec(t, s.v, s.model)
+		}
+	}
+}
+
+func BenchmarkVecSetMut(b *testing.B) {
+	base := FromSlice(make([]any, 100000))
+	for i := 0; i < b.N; i++ {
+		v := base.Edit()
+		for j := 0; j < 100000; j++ {
+			v.SetMut(j, j)
+		}
+	}
+}

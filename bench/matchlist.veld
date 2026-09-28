@@ -1,0 +1,17 @@
+use std.io
+use std.list
+
+fn sum(xs: List[Int], acc: Int) -> Int
+  match xs
+    case [] => acc
+    case [first, ..rest] => sum(rest, acc + first)
+  end match
+end fn
+
+fn main() -> Unit uses io
+  io.print("sum: ${sum(list.range(0, 50000), 0)}")
+end fn
+
+test "sum"
+  expect sum([1, 2, 3], 0) == 6
+end test

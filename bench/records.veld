@@ -1,0 +1,29 @@
+use std.io
+use std.list
+
+record Body
+  x: Float
+  y: Float
+  vx: Float
+  vy: Float
+end record
+
+fn step(b: Body, dt: Float) -> Body
+  Body{x: b.x + b.vx * dt, y: b.y + b.vy * dt, vx: b.vx * 0.999, vy: b.vy - 9.8 * dt}
+end fn
+
+fn simulate(n: Int) -> Float
+  var bodies = list.map(list.range(0, 100), fn(i) => Body{x: 0.0, y: 0.0, vx: 1.0, vy: 10.0})
+  for _ in list.range(0, n)
+    set bodies = list.map(bodies, fn(b) => step(b, 0.001))
+  end for
+  list.fold(bodies, init: 0.0, step: fn(acc, b) => acc + b.y)
+end fn
+
+fn main() -> Unit uses io
+  io.print("sum y: ${simulate(20000)}")
+end fn
+
+test "sim"
+  expect simulate(1) > 0.0
+end test

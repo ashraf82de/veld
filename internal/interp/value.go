@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/ashraf82de/veld/internal/pds"
-	"github.com/ashraf82de/veld/internal/syntax"
 	"github.com/ashraf82de/veld/internal/types"
 )
 
@@ -46,22 +45,6 @@ type Record struct {
 type Variant struct {
 	Ctor   *types.CtorInfo
 	Fields []Value
-}
-
-type Closure struct {
-	Params []string
-	Body   *syntax.Block
-	Env    *Env
-	Mod    *types.Module
-}
-
-type FuncRef struct {
-	Info *types.FuncInfo
-}
-
-type Native struct {
-	Name string
-	Fn   func(th *Thread, args []Value) Value
 }
 
 // ---- display ----

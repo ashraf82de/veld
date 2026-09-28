@@ -1,0 +1,147 @@
+use std.list
+use std.map
+
+## Lists are values: an update never changes anything that could already see
+## the old list, even when the interpreter updates a `var` in place.
+fn identity(xs: List[Int]) -> List[Int]
+  xs
+end fn
+
+fn snapshot_then_push() -> Bool
+  var xs = [1, 2, 3]
+  let snap = xs
+  set xs = list.push(xs, 4)
+  snap == [1, 2, 3] and xs == [1, 2, 3, 4]
+end fn
+
+fn snapshot_then_set_at() -> Bool
+  var xs = [1, 2, 3]
+  set xs = list.set_at(xs, index: 0, item: 10)
+  let snap = xs
+  set xs = list.set_at(xs, index: 1, item: 20)
+  set xs = list.set_at(xs, index: 2, item: 30)
+  snap == [10, 2, 3] and xs == [10, 20, 30]
+end fn
+
+fn passed_through_a_function() -> Bool
+  var xs = [1]
+  set xs = list.push(xs, 2)
+  let same = identity(xs)
+  set xs = list.push(xs, 3)
+  set xs = list.set_at(xs, index: 0, item: 99)
+  same == [1, 2] and xs == [99, 2, 3]
+end fn
+
+fn returned_value_is_frozen() -> List[Int]
+  var xs: List[Int] = []
+  for i in list.range(0, 100)
+    set xs = list.push(xs, i)
+  end for
+  xs
+end fn
+
+fn iterate_while_pushing() -> List[Int]
+  var xs = [1, 2, 3]
+  for x in xs
+    set xs = list.push(xs, x * 10)
+  end for
+  xs
+end fn
+
+fn interpolation_freezes() -> Bool
+  var xs = [1]
+  set xs = list.push(xs, 2)
+  let text = "${xs}"
+  set xs = list.push(xs, 3)
+  text == "[1, 2]" and xs == [1, 2, 3]
+end fn
+
+fn nested_lists() -> Bool
+  var row = [0, 0]
+  var grid: List[List[Int]] = []
+  for i in list.range(0, 3)
+    set row = list.set_at(row, index: 0, item: i)
+    set grid = list.push(grid, row)
+  end for
+  grid == [[0, 0], [1, 0], [2, 0]]
+end fn
+
+fn push_self() -> Bool
+  var xs = [1, 2]
+  set xs = list.push(xs, list.len(xs))
+  set xs = list.push(xs, list.len(xs))
+  xs == [1, 2, 2, 3]
+end fn
+
+fn inspection_does_not_break_updates() -> Int
+  var xs: List[Int] = []
+  var total = 0
+  for i in list.range(0, 1000)
+    set xs = list.push(xs, i)
+    set total = total + list.len(xs) + list.sum(xs)
+  end for
+  total
+end fn
+
+fn sieve(n: Int) -> Int
+  var flags: List[Bool] = list.repeat(true, times: n + 1)
+  var count = 0
+  for i in list.range(2, n + 1)
+    if list.get(flags, i) == Some(true)
+      set count = count + 1
+      var j = i * i
+      while j <= n
+        set flags = list.set_at(flags, index: j, item: false)
+        set j = j + i
+      end while
+    end if
+  end for
+  count
+end fn
+
+fn window_views() -> Bool
+  let big = list.range(0, 1000)
+  let tail = list.drop(big, 3)
+  let more = list.push(tail, -1)
+  let changed = list.set_at(tail, index: 0, item: -5)
+  list.len(more) == 998 and list.get(more, 0) == Some(3) and list.get(more, 997) == Some(-1) and list.get(changed, 0) == Some(-5) and list.get(tail, 0) == Some(3) and list.get(big, 3) == Some(3)
+end fn
+
+test "lists keep value semantics"
+  expect snapshot_then_push()
+  expect snapshot_then_set_at()
+  expect passed_through_a_function()
+  expect list.len(returned_value_is_frozen()) == 100
+  expect iterate_while_pushing() == [1, 2, 3, 10, 20, 30]
+  expect interpolation_freezes()
+  expect nested_lists()
+  expect push_self()
+  expect inspection_does_not_break_updates() == 167167000
+  expect sieve(1000) == 168
+  expect window_views()
+end test
+
+test "maps keep value semantics"
+  let m1 = {"a": 1, "b": 2}
+  let m2 = map.put(m1, key: "c", value: 3)
+  let m3 = map.remove(m2, key: "a")
+  expect map.len(m1) == 2
+  expect map.keys(m2) == ["a", "b", "c"]
+  expect map.keys(m3) == ["b", "c"]
+  expect map.get(m3, key: "a") == None
+  expect m1 == {"b": 2, "a": 1}
+end test
+
+test "maps with many keys"
+  var m: Map[Int, Int] = {}
+  for i in list.range(0, 2000)
+    set m = map.put(m, key: i, value: i * i)
+  end for
+  for i in list.range(0, 1000)
+    set m = map.remove(m, key: i * 2)
+  end for
+  expect map.len(m) == 1000
+  expect map.get(m, key: 1999) == Some(3996001)
+  expect map.get(m, key: 1998) == None
+  expect list.first(map.keys(m)) == Some(1)
+end test

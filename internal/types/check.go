@@ -25,6 +25,9 @@ type Program struct {
 	Modules []*Module
 	ByPath  map[string]*Module
 	Prelude *Module
+	// ExprTypes records the inferred type of every checked expression; the
+	// interpreter uses it to pick specialised code for Int, Float and Bool.
+	ExprTypes map[syntax.Expr]Type
 }
 
 type local struct {
@@ -84,7 +87,7 @@ var (
 // prelude first).
 func Check(inputs []*Input) (*Program, *diag.List) {
 	c := &Checker{diags: &diag.List{}, ExprTypes: map[syntax.Expr]Type{}}
-	prog := &Program{ByPath: map[string]*Module{}}
+	prog := &Program{ByPath: map[string]*Module{}, ExprTypes: c.ExprTypes}
 	c.prog = prog
 	var mods []*Module
 	for _, in := range inputs {

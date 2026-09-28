@@ -477,7 +477,7 @@ func (lx *lexer) rawString(start diag.Pos) {
 		}
 		lx.advance()
 	}
-	body := lx.src[b:lx.off]
+	body := strings.ReplaceAll(lx.src[b:lx.off], "\r\n", "\n")
 	if lx.off < len(lx.src) {
 		for i := 0; i < 3; i++ {
 			lx.advance()

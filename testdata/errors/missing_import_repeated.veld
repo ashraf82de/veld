@@ -1,0 +1,6 @@
+# expect: E601
+fn first_or(items: List[Int], fallback: Int) -> Int
+  let a = list.get(items, 0) |> option.unwrap_or(fallback)
+  let b = list.get(items, 1) |> option.unwrap_or(fallback)
+  a + b
+end fn

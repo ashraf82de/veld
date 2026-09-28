@@ -1,0 +1,26 @@
+type:bug	d73a4a	Something is broken
+type:feature	a2eeef	A new capability
+type:question	d876e3	A question about using Veld
+type:docs	0075ca	Documentation
+type:perf	fbca04	Speed or memory
+area:syntax	bfd4f2	Lexer, parser, formatter
+area:checker	bfd4f2	Types, effects, exhaustiveness
+area:runtime	bfd4f2	Interpreter and data structures
+area:stdlib	bfd4f2	Standard library
+area:cli	bfd4f2	The veld command
+area:diagnostics	bfd4f2	Error messages and fixes
+area:evals	bfd4f2	Agent evaluation tasks
+area:docs	bfd4f2	Guide, design, manual
+area:infra	bfd4f2	CI, release, automation
+P0	b60205	Wrong output, crash, sandbox escape: fix first
+P1	d93f0b	Serious agent-usability problem or regression
+P2	fbca04	Normal
+P3	c2e0c6	Nice to have
+agent-feedback	5319e7	A model or its operator reports friction writing Veld
+needs-info	ededed	Waiting for the reporter (closed after 14 quiet days)
+needs-rfc	5319e7	Language change: write an RFC first
+agent:fix	0e8a16	A maintainer authorises the fix agent to work on this
+good first issue	7057ff	Small and well specified
+duplicate	cfd3d7	Already reported
+invalid	e4e669	Not a Veld problem
+wontfix	ffffff	Declined, with an explanation

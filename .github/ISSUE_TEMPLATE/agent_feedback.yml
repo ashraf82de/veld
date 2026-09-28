@@ -1,0 +1,31 @@
+name: Agent feedback
+description: A model (or you, using one) struggled to write Veld. This is the most valuable kind of report.
+labels: ["agent-feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Veld is judged by how easily agents write correct programs with it. Tell us where it went wrong.
+  - type: input
+    id: model
+    attributes:
+      label: Model and setup
+      description: e.g. "claude-sonnet-5-5, given `veld spec` in context, about 6 tool calls"
+  - type: textarea
+    id: task
+    attributes:
+      label: The task the agent was given
+    validations:
+      required: true
+  - type: textarea
+    id: friction
+    attributes:
+      label: Where it got stuck
+      description: The wrong code it wrote, the diagnostics it saw, how many iterations it took. Paste `veld check --json` output if you have it.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would have made it work first try?
+      description: A better diagnostic or fix, a missing function, a syntax that is easier to get right. Optional.

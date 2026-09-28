@@ -23,7 +23,8 @@ import (
 	"github.com/ashraf82de/veld/internal/types"
 )
 
-const version = "0.1.0"
+// version is set at release time with -ldflags "-X main.version=...".
+var version = "0.2.0-dev"
 
 const usage = `veld %s — a programming language designed for AI agents
 
@@ -39,6 +40,7 @@ usage:
   veld ast <file.veld>                                  print the syntax tree as JSON
   veld new <dir>                                        create a starter project
   veld eval <tasks-dir> <solutions-dir> [--json]        grade agent solutions (see evals/README.md)
+  veld report <files...> [-m "what went wrong"]         print a Markdown bug report to paste into an issue
   veld version
 
 Every command that reports problems supports --json with stable diagnostic
@@ -75,6 +77,8 @@ func main() {
 		code = cmdNew(args)
 	case "eval":
 		code = cmdEval(args)
+	case "report":
+		code = cmdReport(args)
 	case "version", "--version", "-v":
 		fmt.Println("veld " + version)
 	case "help", "--help", "-h":
@@ -834,6 +838,9 @@ end test
 func expandFiles(paths []string) []string {
 	var out []string
 	for _, p := range paths {
+		// Clean, so that paths compare equal to the (cleaned) paths in spans;
+		// otherwise `veld fix C:/dir/a.veld` matched no diagnostics on Windows.
+		p = filepath.Clean(p)
 		st, err := os.Stat(p)
 		if err != nil || !st.IsDir() {
 			out = append(out, p)

@@ -1,0 +1,21 @@
+name: Feature request
+description: A language, standard-library or tooling capability you need.
+labels: ["type:feature"]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What are you trying to build?
+      description: The application or program, not the feature. Features are judged by the programs they unlock.
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: What happens today?
+      description: How would you (or an agent) write it in Veld now, and why is that not good enough?
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Optional. Language changes go through an RFC (docs/rfcs); the maintainers will help you write one.

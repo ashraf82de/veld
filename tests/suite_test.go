@@ -242,3 +242,33 @@ func TestEvalReferences(t *testing.T) {
 		})
 	}
 }
+
+// TestCRLF checks that files with Windows line endings parse to the same
+// program as their LF form: formatting them yields the canonical LF text.
+func TestCRLF(t *testing.T) {
+	for _, f := range veldFiles(t, "std", "examples", "evals", "testdata/semantics") {
+		src, _ := os.ReadFile(f)
+		crlf := strings.ReplaceAll(string(src), "\n", "\r\n")
+		ds := &diag.List{}
+		out := format.File(syntax.Parse(f, crlf, ds))
+		if ds.HasErrors() {
+			t.Errorf("%s: CRLF source does not parse:\n%s", f, diag.Text(ds.Sorted(), nil))
+		} else if out != string(src) {
+			t.Errorf("%s: formatting the CRLF form does not give the canonical LF form", f)
+		}
+	}
+}
+
+// TestCRLFRawString pins that raw multi-line strings do not pick up carriage
+// returns from Windows line endings.
+func TestCRLFRawString(t *testing.T) {
+	src := "fn text() -> Str\r\n  \"\"\"\r\n  a\r\n  b\r\n  \"\"\"\r\nend fn\r\n"
+	ds := &diag.List{}
+	f := syntax.Parse("raw.veld", src, ds)
+	if ds.HasErrors() {
+		t.Fatalf("parse errors:\n%s", diag.Text(ds.Sorted(), nil))
+	}
+	if strings.Contains(format.File(f), "\r") {
+		t.Errorf("formatted output contains a carriage return")
+	}
+}

@@ -270,11 +270,24 @@ func ApplyFixes(src string, fixes []Fix) (string, int) {
 	})
 	applied := map[int]bool{}
 	skipped := map[int]bool{}
+	type key struct {
+		start, end int
+		text       string
+	}
+	done := map[key]bool{}
 	limit := len(src) + 1
 	for _, e := range edits {
 		if skipped[e.fix] {
 			continue
 		}
+		// Several diagnostics often carry the same fix (one `use std.option`
+		// per use of an unimported module); apply it once.
+		k := key{e.start, e.end, e.text}
+		if done[k] {
+			applied[e.fix] = true
+			continue
+		}
+		done[k] = true
 		if e.end > limit || (e.end == limit && e.start != e.end) {
 			skipped[e.fix] = true
 			continue

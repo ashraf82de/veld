@@ -1,0 +1,29 @@
+name: Bug report
+description: Veld printed a wrong result, crashed, or accepted/rejected a program it should not have.
+labels: ["type:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The fastest way to a fix: run `veld report your_file.veld -m "what went wrong"` and paste the output below.
+  - type: textarea
+    id: report
+    attributes:
+      label: Output of `veld report`
+      description: Includes your version, the program, diagnostics and test results.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead?
+      description: Exact output, panic trace or diagnostic (`veld check --json` is ideal).
+    validations:
+      required: true

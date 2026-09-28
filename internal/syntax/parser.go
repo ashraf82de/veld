@@ -1216,7 +1216,16 @@ func (p *parser) parseMatch() Expr {
 			arm.Guard = p.parseExpr()
 		}
 		if p.at(FATARROW) {
-			p.next()
+			fat := p.next()
+			if p.peek().Span.Start.Line > fat.Span.End.Line {
+				// `case p =>` with the body on the following lines: a block
+				// arm. Written by habit from other languages, so accept it;
+				// `veld fmt` prints the canonical `case p` form.
+				arm.Body = p.parseBlock(KW_CASE, KW_END)
+				arm.Span = p.span(as)
+				m.Arms = append(m.Arms, arm)
+				continue
+			}
 			arm.Short = true
 			if p.at(KW_SET) || p.at(KW_EXPECT) {
 				st := p.parseSimpleStmt()

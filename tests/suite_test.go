@@ -6,11 +6,13 @@
 package tests
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/ashraf82de/veld/internal/codes"
@@ -270,5 +272,112 @@ func TestCRLFRawString(t *testing.T) {
 	}
 	if strings.Contains(format.File(f), "\r") {
 		t.Errorf("formatted output contains a carriage return")
+	}
+}
+
+// TestConcurrentThreads runs interpreted code from many goroutines at once, as
+// an HTTP server does: the shared program must be race-free (run with -race),
+// std.state updates must be atomic, and persistent lists shared between
+// threads must never change under a reader.
+func TestConcurrentThreads(t *testing.T) {
+	src := `use std.json
+use std.list
+use std.state
+
+fn bump() -> Int uses state
+  state.incr("counter", by: 1)
+end fn
+
+fn record_max(n: Int) -> Json uses state
+  state.update("max", fn(old) => json.int(pick_max(old, n)))
+end fn
+
+fn pick_max(old: Option[Json], n: Int) -> Int
+  match old
+    case Some(v) => if json.as_int(v) == Some(n)
+      n
+    else
+      match json.as_int(v)
+        case Some(m) => if m > n
+          m
+        else
+          n
+        end if
+        case None => n
+      end match
+    end if
+    case None => n
+  end match
+end fn
+
+fn sum_shared(xs: List[Int]) -> Int
+  var total = 0
+  for x in xs
+    set total = total + x
+  end for
+  total
+end fn
+
+fn grow(xs: List[Int]) -> List[Int]
+  var out = xs
+  for i in list.range(0, 200)
+    set out = list.push(out, i)
+    set out = list.set_at(out, index: 0, item: i)
+  end for
+  out
+end fn
+`
+	dir := t.TempDir()
+	file := filepath.Join(dir, "conc.veld")
+	os.WriteFile(file, []byte(src), 0o644)
+	l := project.Load(dir, []string{file})
+	if l.Diags.HasErrors() {
+		t.Fatalf("check failed:\n%s", diag.Text(l.Diags.Sorted(), l.Sources))
+	}
+	in := interp.New(l.Program, types.AllEffects&^types.EffectBit("net"), l.Sources)
+	mod := l.Entries[0]
+	shared := interp.NewList(func() []interp.Value {
+		out := make([]interp.Value, 1000)
+		for i := range out {
+			out[i] = int64(i)
+		}
+		return out
+	}())
+	const workers, rounds = 16, 200
+	var wg sync.WaitGroup
+	errs := make(chan error, workers)
+	for w := 0; w < workers; w++ {
+		wg.Add(1)
+		go func(w int) {
+			defer wg.Done()
+			th := in.NewThread(mod)
+			errs <- th.Protect(func() {
+				for i := 0; i < rounds; i++ {
+					th.CallFunc(mod.Funcs["bump"], nil)
+					th.CallFunc(mod.Funcs["record_max"], []interp.Value{int64(w*rounds + i)})
+					if got := th.CallFunc(mod.Funcs["sum_shared"], []interp.Value{shared}); got != int64(499500) {
+						panic(fmt.Sprintf("shared list changed under a reader: sum = %v", got))
+					}
+					grown := th.CallFunc(mod.Funcs["grow"], []interp.Value{shared}).(interp.List)
+					if grown.Len() != 1200 || grown.Get(0) != int64(199) {
+						panic("grow returned a wrong list")
+					}
+				}
+			})
+		}(w)
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if shared.Get(0) != int64(0) || shared.Len() != 1000 {
+		t.Fatal("the shared list was modified")
+	}
+	th := in.NewThread(mod)
+	if got := th.CallFunc(mod.Funcs["bump"], nil); got != int64(workers*rounds+1) {
+		t.Errorf("lost updates: counter = %v, want %d", got, workers*rounds+1)
 	}
 }

@@ -1,0 +1,141 @@
+# A notes API with in-memory storage that is safe under concurrent requests.
+# Run: veld run examples/notes_api.veld
+# Then: curl -X POST localhost:8081/notes -d '{"text":"buy milk"}'
+#       curl localhost:8081/notes        curl -X DELETE localhost:8081/notes/1
+use std.http
+use std.io
+use std.json
+use std.list
+use std.map
+use std.state
+use std.str
+
+record Note
+  id: Int
+  text: Str
+end record
+
+fn note_key(id: Int) -> Str
+  "note:${id}"
+end fn
+
+fn to_json(n: Note) -> Json
+  json.object({"id": json.int(n.id), "text": json.string(n.text)})
+end fn
+
+fn from_json(j: Json) -> Option[Note]
+  let id = json.get(j, "id") |> option_as_int()?
+  let text = json.get(j, "text") |> option_as_str()?
+  Some(Note{id: id, text: text})
+end fn
+
+fn option_as_int(j: Option[Json]) -> Option[Int]
+  match j
+    case Some(v) => json.as_int(v)
+    case None => None
+  end match
+end fn
+
+fn option_as_str(j: Option[Json]) -> Option[Str]
+  match j
+    case Some(v) => json.as_str(v)
+    case None => None
+  end match
+end fn
+
+fn all_notes() -> List[Note] uses state
+  state.keys()
+    |> list.filter(fn(k) => str.starts_with(k, "note:"))
+    |> list.flat_map(fn(k) => note_list(state.get(k)))
+end fn
+
+fn note_list(stored: Option[Json]) -> List[Note]
+  match stored
+    case Some(j)
+      match from_json(j)
+        case Some(n) => [n]
+        case None => []
+      end match
+    case None => []
+  end match
+end fn
+
+fn create(req: http.Request) -> http.Response uses state
+  match http.json_body(req)
+    case Err(e) => http.error(400, "body is not valid JSON: ${e}")
+    case Ok(body)
+      match json.get(body, "text") |> option_as_str()
+        case None => http.error(400, "expected {\"text\": \"...\"}")
+        case Some(text)
+          let id = state.incr("next_id", by: 1)
+          let note = Note{id: id, text: text}
+          state.put(note_key(id), to_json(note))
+          http.json_response(201, to_json(note))
+      end match
+  end match
+end fn
+
+fn show(id_text: Str) -> http.Response uses state
+  match str.to_int(id_text)
+    case None => http.error(400, "note ids are integers")
+    case Some(id)
+      match state.get(note_key(id))
+        case Some(j) => http.json_response(200, j)
+        case None => http.error(404, "no note ${id}")
+      end match
+  end match
+end fn
+
+fn remove(id_text: Str) -> http.Response uses state
+  match str.to_int(id_text)
+    case None => http.error(400, "note ids are integers")
+    case Some(id)
+      match state.get(note_key(id))
+        case None => http.error(404, "no note ${id}")
+        case Some(_)
+          state.remove(note_key(id))
+          http.text(204, "")
+      end match
+  end match
+end fn
+
+fn handle(req: http.Request) -> http.Response uses state
+  match http.segments(req.path)
+    case ["notes"]
+      match req.method
+        case "GET" => http.json_response(200, json.array(list.map(all_notes(), to_json)))
+        case "POST" => create(req)
+        case _ => http.error(405, "method not allowed")
+      end match
+    case ["notes", id]
+      match req.method
+        case "GET" => show(id)
+        case "DELETE" => remove(id)
+        case _ => http.error(405, "method not allowed")
+      end match
+    case [] => http.text(200, "notes api: /notes")
+    case _ => http.error(404, "not found")
+  end match
+end fn
+
+fn main() -> Result[Unit, Str] uses io, net, state
+  io.print("serving on :8081")
+  http.serve(8081, handle)
+end fn
+
+test "json round trip"
+  let n = Note{id: 3, text: "x"}
+  expect from_json(to_json(n)) == Some(n)
+end test
+
+test "routing"
+  let req = http.Request{method: "GET", path: "/", query: {}, headers: {}, body: ""}
+  expect handle(req).status == 200
+  expect handle(http.Request{..req, path: "/nope"}).status == 404
+  let created = handle(http.Request{..req, method: "POST", path: "/notes", body: "{\"text\":\"hi\"}"})
+  expect created.status == 201
+  expect handle(http.Request{..req, method: "POST", path: "/notes", body: "{}"}).status == 400
+  expect handle(http.Request{..req, path: "/notes/abc"}).status == 400
+  expect handle(http.Request{..req, path: "/notes/99999"}).status == 404
+  expect list.len(all_notes()) >= 1
+end test

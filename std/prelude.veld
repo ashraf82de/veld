@@ -32,3 +32,17 @@ pub record Pair[A, B]
   first: A
   second: B
 end record
+
+## The values of a multi-value `match a, b`. The parser builds these; there is
+## no need to write them yourself.
+pub type Tuple2[A, B]
+  case Tuple2(first: A, second: B)
+end type
+
+pub type Tuple3[A, B, C]
+  case Tuple3(first: A, second: B, third: C)
+end type
+
+pub type Tuple4[A, B, C, D]
+  case Tuple4(first: A, second: B, third: C, fourth: D)
+end type

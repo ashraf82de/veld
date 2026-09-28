@@ -1,0 +1,14 @@
+use solution
+
+test "wraps greedily"
+  expect solution.wrap("the quick brown fox jumps over the lazy dog", 10) == ["the quick", "brown fox", "jumps over", "the lazy", "dog"]
+  expect solution.wrap("aaa bbb", 7) == ["aaa bbb"]
+  expect solution.wrap("aaa bbb", 6) == ["aaa", "bbb"]
+end test
+
+test "edge cases"
+  expect solution.wrap("", 10) == []
+  expect solution.wrap("   ", 10) == []
+  expect solution.wrap("extraordinary is long", 5) == ["extraordinary", "is", "long"]
+  expect solution.wrap("  spaced    out  ", 20) == ["spaced out"]
+end test

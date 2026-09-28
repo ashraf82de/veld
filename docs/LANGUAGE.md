@@ -199,6 +199,18 @@ Some(x)   Rect(w, _)   shapes.Circle(r)  # constructors (all fields)
 case x if x > 0 => ...                   # guard
 ```
 
+Match on several values at once (2 to 4) with commas; every `case` lists one
+pattern per value, `|` alternatives apply to one value, and a lone `_` covers
+every value:
+
+```
+match state, event
+  case Idle, Start => Running
+  case Running, Stop | Timeout => Idle
+  case _ => state
+end match
+```
+
 ## Errors
 
 Expected failures are values: return `Result[T, E]` and propagate with `?`.

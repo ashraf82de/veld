@@ -1,0 +1,38 @@
+use std.list
+use std.map
+use std.math
+
+pub record Cache
+  capacity: Int
+  order: List[Str]
+  values: Map[Str, Int]
+end record
+
+pub fn new(capacity: Int) -> Cache
+  Cache{capacity: math.max(capacity, 1), order: [], values: {}}
+end fn
+
+fn touch(order: List[Str], key: Str) -> List[Str]
+  list.push(list.filter(order, fn(k) => k != key), key)
+end fn
+
+pub fn put(cache: Cache, key: Str, value: Int) -> Cache
+  var order = cache.order
+  var values = cache.values
+  if not map.has(values, key) and list.len(order) >= cache.capacity
+    match list.first(order)
+      case Some(oldest)
+        set order = list.drop(order, 1)
+        set values = map.remove(values, oldest)
+      case None => set order = order
+    end match
+  end if
+  Cache{..cache, order: touch(order, key), values: map.put(values, key: key, value: value)}
+end fn
+
+pub fn get(cache: Cache, key: Str) -> Pair[Option[Int], Cache]
+  match map.get(cache.values, key)
+    case Some(v) => Pair{first: Some(v), second: Cache{..cache, order: touch(cache.order, key)}}
+    case None => Pair{first: None, second: cache}
+  end match
+end fn

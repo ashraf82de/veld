@@ -1,0 +1,27 @@
+use std.str
+use solution
+
+test "summary"
+  let text = """[{"name":"ada","age":36},{"name":"alan","age":41},{"name":"grace","age":41}]"""
+  expect solution.summarize(text) == Ok(
+    """{"count":3,"oldest":"alan","average_age":39.333333333333336,"names":["ada","alan","grace"]}""",
+  )
+end test
+
+test "empty"
+  expect solution.summarize("[]") == Ok("""{"count":0,"oldest":null,"average_age":0,"names":[]}""")
+end test
+
+test "errors"
+  expect is_invalid_json(solution.summarize("["))
+  expect solution.summarize("{}") == Err("expected an array")
+  expect solution.summarize("""[{"name":"a","age":1},{"name":"b"}]""") == Err("bad person at index 1")
+  expect solution.summarize("""[{"name":5,"age":1}]""") == Err("bad person at index 0")
+end test
+
+fn is_invalid_json(r: Result[Str, Str]) -> Bool
+  match r
+    case Err(e) => str.starts_with(e, "invalid JSON")
+    case Ok(_) => false
+  end match
+end fn

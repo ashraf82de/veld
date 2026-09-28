@@ -1,0 +1,22 @@
+use std.regex
+
+pub fn emails(text: Str) -> List[Str]
+  match regex.find_all("""[A-Za-z0-9._-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}""", text)
+    case Ok(found) => found
+    case Err(_) => []
+  end match
+end fn
+
+pub fn is_iso_date(text: Str) -> Bool
+  match regex.is_match("""^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$""", text)
+    case Ok(ok) => ok
+    case Err(_) => false
+  end match
+end fn
+
+pub fn redact_digits(text: Str) -> Str
+  match regex.replace(text, pattern: """\d+""", with: "#")
+    case Ok(out) => out
+    case Err(_) => text
+  end match
+end fn

@@ -1,0 +1,30 @@
+use solution
+
+test "basic put and get"
+  let c = solution.put(solution.put(solution.new(2), key: "a", value: 1), key: "b", value: 2)
+  expect solution.get(c, "a").first == Some(1)
+  expect solution.get(c, "b").first == Some(2)
+  expect solution.get(c, "z").first == None
+end test
+
+test "evicts the least recently used"
+  let c = solution.put(solution.put(solution.new(2), key: "a", value: 1), key: "b", value: 2)
+  let touched = solution.get(c, "a").second
+  let c2 = solution.put(touched, key: "c", value: 3)
+  expect solution.get(c2, "b").first == None
+  expect solution.get(c2, "a").first == Some(1)
+  expect solution.get(c2, "c").first == Some(3)
+end test
+
+test "updating a key does not evict"
+  let c = solution.put(solution.put(solution.new(2), key: "a", value: 1), key: "b", value: 2)
+  let c2 = solution.put(c, key: "a", value: 10)
+  expect solution.get(c2, "a").first == Some(10)
+  expect solution.get(c2, "b").first == Some(2)
+end test
+
+test "capacity below one behaves like one"
+  let c = solution.put(solution.put(solution.new(0), key: "a", value: 1), key: "b", value: 2)
+  expect solution.get(c, "a").first == None
+  expect solution.get(c, "b").first == Some(2)
+end test

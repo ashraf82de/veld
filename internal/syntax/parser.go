@@ -28,6 +28,9 @@ type parser struct {
 	ci       int
 	diags    *diag.List
 	errLine  int // last line an error was reported on (one error per line)
+	// tooMany remembers matches that listed more than 4 values (and how many),
+	// so their cases are not also reported for having the wrong arity.
+	tooMany map[*MatchExpr]int
 }
 
 type bailout struct{}
@@ -1204,12 +1207,15 @@ func (p *parser) parseIf() Expr {
 func (p *parser) parseMatch() Expr {
 	start := p.next().Span.Start
 	m := &MatchExpr{X: p.parseExpr()}
+	if p.at(COMMA) {
+		p.parseMatchValues(m)
+	}
 	p.condLine("match")
 	for p.at(KW_CASE) {
 		as := p.peek().Span.Start
 		lead := p.leading(as.Line)
 		p.next()
-		arm := &Arm{Pattern: p.parsePattern()}
+		arm := &Arm{Pattern: p.parseCasePattern(m)}
 		arm.Leading = lead
 		if p.at(KW_IF) {
 			p.next()
@@ -1291,6 +1297,92 @@ func (p *parser) parseWhile() Expr {
 	p.parseEnd(KW_WHILE, "while", start)
 	w.Span = p.span(start)
 	return w
+}
+
+// ---- multi-value match ----
+
+// tupleName is the prelude constructor standing for n matched values.
+func tupleName(n int) string { return "Tuple" + strconv.Itoa(n) }
+
+// parseMatchValues parses the further `, value` scrutinees of `match a, b` and
+// rewrites m to match on the prelude constructor TupleN over them.
+func (p *parser) parseMatchValues(m *MatchExpr) {
+	vals := []Expr{m.X}
+	for p.at(COMMA) {
+		p.next()
+		vals = append(vals, p.parseExpr())
+	}
+	sp := diag.Join(vals[0].Sp(), vals[len(vals)-1].Sp())
+	if len(vals) > 4 {
+		p.errAt(sp, "E508", "a `match` can list at most 4 values, found %d", len(vals)).
+			Note("group related values in a record")
+		if p.tooMany == nil {
+			p.tooMany = map[*MatchExpr]int{}
+		}
+		p.tooMany[m] = len(vals)
+		vals = vals[:4]
+	}
+	args := make([]*Arg, len(vals))
+	for i, v := range vals {
+		args[i] = &Arg{Value: v}
+	}
+	m.Values = vals
+	m.X = &CallExpr{Fn: &Ident{Name: tupleName(len(vals)), Span: sp}, Args: args, Span: sp, Synthetic: true}
+}
+
+// parseCasePattern parses the pattern(s) of a `case` head. In a multi-value
+// match it is one pattern per value, separated by commas; a lone `_` stands
+// for a wildcard in every column.
+func (p *parser) parseCasePattern(m *MatchExpr) Pattern {
+	first := p.parsePattern()
+	if !p.at(COMMA) {
+		if m.Values == nil {
+			return first
+		}
+		pats := make([]Pattern, len(m.Values))
+		for i := range pats {
+			pats[i] = &WildPat{Span: first.Sp()}
+		}
+		if _, isWild := first.(*WildPat); isWild {
+			return &CtorPat{Tuple: true, Name: tupleName(len(pats)), Args: pats, HasParens: true, Span: first.Sp()}
+		}
+		d := p.errAt(first.Sp(), "E507", "this `match` has %d values, but this `case` has 1 pattern", len(m.Values))
+		d.WithFix("add `_` for the other values", diag.Span{File: first.Sp().File, Start: first.Sp().End, End: first.Sp().End},
+			strings.Repeat(", _", len(m.Values)-1))
+		pats[0] = first
+		return &CtorPat{Tuple: true, Name: tupleName(len(pats)), Args: pats, HasParens: true, Span: first.Sp()}
+	}
+	pats := []Pattern{first}
+	for p.at(COMMA) {
+		p.next()
+		pats = append(pats, p.parsePattern())
+	}
+	sp := diag.Join(first.Sp(), pats[len(pats)-1].Sp())
+	switch {
+	case m.Values == nil:
+		p.errAt(sp, "E509", "this `case` lists %d patterns, but the `match` has a single value", len(pats)).
+			Note("to match several values at once, write `match a, b` and one pattern per value")
+		return first
+	case p.tooMany[m] == len(pats):
+		pats = pats[:len(m.Values)] // already reported as E508
+	case len(pats) != len(m.Values):
+		d := p.errAt(sp, "E507", "this `match` has %d values, but this `case` has %d patterns", len(m.Values), len(pats))
+		if len(pats) < len(m.Values) {
+			d.WithFix("add `_` for the other values", diag.Span{File: sp.File, Start: sp.End, End: sp.End},
+				strings.Repeat(", _", len(m.Values)-len(pats)))
+		}
+		for _, pt := range pats {
+			if _, isOr := pt.(*OrPat); isOr {
+				d.Note("`|` alternatives apply to one value; for alternative combinations of values, write a separate `case` line for each")
+				break
+			}
+		}
+		for len(pats) < len(m.Values) {
+			pats = append(pats, &WildPat{Span: sp})
+		}
+		pats = pats[:len(m.Values)]
+	}
+	return &CtorPat{Tuple: true, Name: tupleName(len(pats)), Args: pats, HasParens: true, Span: sp}
 }
 
 // ---- patterns ----

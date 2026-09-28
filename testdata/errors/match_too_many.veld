@@ -1,0 +1,6 @@
+# expect: E508
+fn f(a: Int, b: Int, c: Int, d: Int, e: Int) -> Int
+  match a, b, c, d, e
+    case _, _, _, _, _ => 0
+  end match
+end fn

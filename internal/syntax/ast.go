@@ -258,6 +258,9 @@ type CallExpr struct {
 	Args   []*Arg    `json:"args"`
 	Span   diag.Span `json:"span"`
 	LParen diag.Pos  `json:"-"`
+	// Synthetic marks the constructor call the parser builds for the values of
+	// a multi-value `match a, b`; it is not in the source.
+	Synthetic bool `json:"-"`
 }
 
 // PipeExpr is `L |> R` where R is a call; L becomes R's first argument.
@@ -344,8 +347,11 @@ type Arm struct {
 }
 
 type MatchExpr struct {
-	EndPos      diag.Pos  `json:"-"`
-	X           Expr      `json:"x"`
+	EndPos diag.Pos `json:"-"`
+	X      Expr     `json:"x"`
+	// Values lists the scrutinees of a multi-value match (`match a, b`); X is
+	// then a synthetic TupleN constructor call over them. Nil otherwise.
+	Values      []Expr    `json:"values,omitempty"`
 	Arms        []*Arm    `json:"arms"`
 	Span        diag.Span `json:"span"`
 	EndComments []string  `json:"end_comments,omitempty"`
@@ -460,6 +466,8 @@ type LitPat struct {
 }
 
 type CtorPat struct {
+	// Tuple marks the TupleN pattern of a multi-value `case p, q`.
+	Tuple     bool      `json:"-"`
 	Module    string    `json:"module,omitempty"`
 	Name      string    `json:"name"`
 	Args      []Pattern `json:"args,omitempty"`

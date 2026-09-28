@@ -26,6 +26,16 @@ change lists how to migrate (`veld fix` carries the migration where possible).
   clean `R501` error.
 
 ### Added
+- Multi-value `match a, b` with `case p, q` (RFC 0001): state machines and
+  routers without nested matches or throw-away records. New diagnostics
+  E507 (wrong number of patterns, with a fix), E508 (more than 4 values), E509
+  (commas in a single-value match).
+- Effects `proc` and `state`; stdlib modules `regex`, `path`, `encoding`,
+  `crypto`, `csv`, `datetime`, `process`, `state`; prelude `Pair[A, B]`;
+  new functions in `str`, `list`, `map`, `math`, `json`, `http` (see
+  docs/LANGUAGE.md). `examples/notes_api.veld` is a concurrent CRUD server.
+- Eval tasks 009-017 (state machine, router, CSV report, regex, LRU cache,
+  JSON summary, matrix, word wrap, shortest path).
 - `veld report <files> -m "..."` prints a Markdown bug report (environment,
   source, diagnostics, test results) ready to paste into an issue.
 - `case pattern =>` followed by a newline and an indented block is accepted

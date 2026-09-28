@@ -557,7 +557,7 @@ func (c *Checker) checkCall(call *syntax.CallExpr, piped syntax.Expr, want Type)
 			if seenNamed {
 				c.errf("E303", a.Value.Sp(), "positional argument after a named argument")
 			}
-			if len(args) >= 3 && i >= 1 && cl.params != nil && i < len(cl.params) {
+			if len(args) >= 3 && i >= 1 && cl.params != nil && i < len(cl.params) && !call.Synthetic {
 				needNames = append(needNames, a)
 			}
 			if i >= nparams {

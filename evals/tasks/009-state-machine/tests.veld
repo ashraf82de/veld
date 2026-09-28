@@ -1,0 +1,16 @@
+use solution
+
+test "single steps"
+  expect solution.step(solution.Locked, solution.Coin) == solution.Unlocked(1)
+  expect solution.step(solution.Unlocked(2), solution.Coin) == solution.Unlocked(3)
+  expect solution.step(solution.Unlocked(2), solution.Push) == solution.Locked
+  expect solution.step(solution.Locked, solution.Push) == solution.Locked
+  expect solution.step(solution.Unlocked(1), solution.Kick) == solution.Broken
+  expect solution.step(solution.Broken, solution.Coin) == solution.Broken
+end test
+
+test "runs"
+  expect solution.run([]) == solution.Locked
+  expect solution.run([solution.Coin, solution.Coin, solution.Push, solution.Coin]) == solution.Unlocked(1)
+  expect solution.run([solution.Coin, solution.Kick, solution.Coin, solution.Push]) == solution.Broken
+end test

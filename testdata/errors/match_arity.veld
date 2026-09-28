@@ -1,0 +1,13 @@
+# expect: E507
+type Light
+  case Red
+  case Green
+end type
+
+fn next(light: Light, emergency: Bool) -> Light
+  match light, emergency
+    case Red, false => Green
+    case Green => Red
+    case _, true => Red
+  end match
+end fn

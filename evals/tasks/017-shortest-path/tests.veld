@@ -1,0 +1,36 @@
+use std.list
+use std.str
+use solution
+
+fn e(route: Str, cost: Int) -> solution.Edge
+  let parts = str.split(route, ">")
+  solution.Edge{
+    from: list.get_or(parts, index: 0, fallback: ""),
+    to: list.get_or(parts, index: 1, fallback: ""),
+    cost: cost,
+  }
+end fn
+
+test "small graph"
+  let edges = [
+    e("a>b", 7),
+    e("a>c", 9),
+    e("a>f", 14),
+    e("b>c", 10),
+    e("b>d", 15),
+    e("c>d", 11),
+    e("c>f", 2),
+    e("d>e", 6),
+    e("f>e", 9),
+  ]
+  expect solution.shortest(edges, from: "a", to: "e") == Some(20)
+  expect solution.shortest(edges, from: "a", to: "a") == Some(0)
+  expect solution.shortest(edges, from: "e", to: "a") == None
+  expect solution.shortest(edges, from: "a", to: "zzz") == None
+  expect solution.shortest([], from: "a", to: "b") == None
+end test
+
+test "a long chain is fast enough"
+  let edges = list.map(list.range(0, 400), fn(i) => e("n${i}>n${i + 1}", 1))
+  expect solution.shortest(edges, from: "n0", to: "n400") == Some(400)
+end test

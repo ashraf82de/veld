@@ -1,0 +1,28 @@
+use std.list
+
+pub type State
+  case Locked
+  case Unlocked(coins: Int)
+  case Broken
+end type
+
+pub type Event
+  case Coin
+  case Push
+  case Kick
+end type
+
+pub fn step(state: State, event: Event) -> State
+  match state, event
+    case Broken, _ => Broken
+    case _, Kick => Broken
+    case Locked, Coin => Unlocked(1)
+    case Locked, Push => Locked
+    case Unlocked(n), Coin => Unlocked(n + 1)
+    case Unlocked(_), Push => Locked
+  end match
+end fn
+
+pub fn run(events: List[Event]) -> State
+  list.fold(events, init: Locked, step: step)
+end fn

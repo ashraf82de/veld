@@ -1,0 +1,116 @@
+use std.io
+use std.str
+
+type State
+  case Idle
+  case Running(ticks: Int)
+  case Done
+end type
+
+type Event
+  case Start
+  case Tick
+  case Stop
+end type
+
+fn step(state: State, event: Event) -> State
+  match state, event
+    case Idle, Start => Running(0)
+    case Running(n), Tick => Running(n + 1)
+    case Running(_), Stop => Done
+    case s, _ => s
+  end match
+end fn
+
+fn describe(a: Option[Int], b: Option[Int]) -> Str
+  match a, b
+    case Some(x), Some(y) => "both ${x + y}"
+    case Some(x), None => "left ${x}"
+    case None, Some(y) => "right ${y}"
+    case None, None => "none"
+  end match
+end fn
+
+test "multi-value match"
+  expect step(Idle, Start) == Running(0)
+  expect step(Running(2), Tick) == Running(3)
+  expect step(Running(2), Stop) == Done
+  expect step(Done, Tick) == Done
+  expect describe(Some(1), Some(2)) == "both 3"
+  expect describe(None, Some(4)) == "right 4"
+  expect describe(Some(5), None) == "left 5"
+  expect describe(None, None) == "none"
+end test
+
+fn route(method: Str, segments: List[Str]) -> Str
+  match method, segments
+    case "GET", [] => "home"
+    case "GET", ["users", id] => "user ${id}"
+    case "POST", ["users"] => "create"
+    case _, ["users", _] => "method not allowed"
+    case _ => "not found"
+  end match
+end fn
+
+fn three(a: Bool, b: Bool, c: Bool) -> Int
+  match a, b, c
+    case true, true, true => 3
+    case true, true, false => 2
+    case true, false, true => 2
+    case false, true, true => 2
+    case false, false, false => 0
+    case _ => 1
+  end match
+end fn
+
+fn per_column_alternatives(a: Int, b: Str) -> Str
+  match a, b
+    case 1 | 2, "x" | "y" => "small xy"
+    case _, "x" => "x"
+    case _ => "other"
+  end match
+end fn
+
+fn guarded(a: Int, b: Int) -> Str
+  match a, b
+    case x, y if x > y => "greater"
+    case x, y if x == y => "equal"
+    case _ => "less"
+  end match
+end fn
+
+fn parse_pair(a: Str, b: Str) -> Result[Int, Str]
+  match str_to_int(a)?, str_to_int(b)?
+    case x, y if y != 0 => Ok(x / y)
+    case _ => Err("division by zero")
+  end match
+end fn
+
+fn str_to_int(s: Str) -> Result[Int, Str]
+  match str.to_int(s)
+    case Some(n) => Ok(n)
+    case None => Err("not a number: ${s}")
+  end match
+end fn
+
+test "multi-value routing and columns"
+  expect route("GET", []) == "home"
+  expect route("GET", ["users", "7"]) == "user 7"
+  expect route("POST", ["users"]) == "create"
+  expect route("DELETE", ["users", "7"]) == "method not allowed"
+  expect route("GET", ["x", "y", "z"]) == "not found"
+  expect three(true, b: true, c: true) == 3
+  expect three(true, b: false, c: true) == 2
+  expect three(false, b: false, c: true) == 1
+  expect three(false, b: false, c: false) == 0
+  expect per_column_alternatives(2, "y") == "small xy"
+  expect per_column_alternatives(5, "x") == "x"
+  expect per_column_alternatives(1, "z") == "other"
+  expect guarded(3, 1) == "greater"
+  expect guarded(2, 2) == "equal"
+  expect guarded(1, 2) == "less"
+  expect parse_pair("6", "3") == Ok(2)
+  expect parse_pair("6", "0") == Err("division by zero")
+  expect parse_pair("6", "x") == Err("not a number: x")
+  expect parse_pair("q", "x") == Err("not a number: q")
+end test

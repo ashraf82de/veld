@@ -1,0 +1,21 @@
+use std.list
+use std.str
+
+pub fn wrap(text: Str, width: Int) -> List[Str]
+  var lines: List[Str] = []
+  var current = ""
+  for word in str.words(text)
+    if current == ""
+      set current = word
+    else if str.len(current) + 1 + str.len(word) <= width
+      set current = current + " " + word
+    else
+      set lines = list.push(lines, current)
+      set current = word
+    end if
+  end for
+  if current != ""
+    set lines = list.push(lines, current)
+  end if
+  lines
+end fn

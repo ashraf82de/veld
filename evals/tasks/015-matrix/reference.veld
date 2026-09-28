@@ -1,0 +1,58 @@
+use std.list
+
+pub fn identity(n: Int) -> List[List[Int]]
+  list.map(
+    list.range(0, n),
+    fn(i)
+      list.map(
+        list.range(0, n),
+        fn(j)
+          if i == j
+            1
+          else
+            0
+          end if
+        end fn,
+      )
+    end fn,
+  )
+end fn
+
+fn width(m: List[List[Int]]) -> Int
+  match m
+    case [] => 0
+    case [row, .._] => list.len(row)
+  end match
+end fn
+
+fn cell(m: List[List[Int]], row: Int, col: Int) -> Int
+  match list.get(m, row)
+    case Some(r) => list.get(r, col) |> unwrap_int()
+    case None => 0
+  end match
+end fn
+
+fn unwrap_int(o: Option[Int]) -> Int
+  match o
+    case Some(v) => v
+    case None => 0
+  end match
+end fn
+
+pub fn transpose(m: List[List[Int]]) -> List[List[Int]]
+  list.map(list.range(0, width(m)), fn(c) => list.map(m, fn(row) => unwrap_int(list.get(row, c))))
+end fn
+
+pub fn multiply(a: List[List[Int]], b: List[List[Int]]) -> Result[List[List[Int]], Str]
+  if width(a) != list.len(b)
+    return Err("dimension mismatch")
+  end if
+  let bt = transpose(b)
+  Ok(list.map(a, fn(row) => list.map(bt, fn(col) => dot(row, col))))
+end fn
+
+fn dot(xs: List[Int], ys: List[Int]) -> Int
+  list.sum(
+    list.map(list.range(0, list.len(xs)), fn(i) => unwrap_int(list.get(xs, i)) * unwrap_int(list.get(ys, i))),
+  )
+end fn

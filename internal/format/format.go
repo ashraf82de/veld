@@ -390,7 +390,15 @@ func (p *printer) expr(e syntax.Expr) string {
 		return b.String()
 	case *syntax.MatchExpr:
 		var b strings.Builder
-		b.WriteString("match " + p.expr(e.X) + "\n")
+		if e.Values != nil {
+			vals := make([]string, len(e.Values))
+			for i, v := range e.Values {
+				vals[i] = p.expr(v)
+			}
+			b.WriteString("match " + strings.Join(vals, ", ") + "\n")
+		} else {
+			b.WriteString("match " + p.expr(e.X) + "\n")
+		}
 		b.WriteString(p.sub(func() {
 			for _, arm := range e.Arms {
 				p.comments(arm.Leading)
@@ -624,6 +632,20 @@ func Pattern(pt syntax.Pattern) string {
 		p := &printer{}
 		return p.expr(pt.Value)
 	case *syntax.CtorPat:
+		if pt.Tuple {
+			as := make([]string, len(pt.Args))
+			allWild := true
+			for i, a := range pt.Args {
+				as[i] = Pattern(a)
+				if _, ok := a.(*syntax.WildPat); !ok {
+					allWild = false
+				}
+			}
+			if allWild {
+				return "_"
+			}
+			return strings.Join(as, ", ")
+		}
 		s := pt.Name
 		if pt.Module != "" {
 			s = pt.Module + "." + s

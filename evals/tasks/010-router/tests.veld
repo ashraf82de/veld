@@ -1,0 +1,18 @@
+use solution
+
+test "routes"
+  expect solution.route("GET", "/") == "home"
+  expect solution.route("GET", "/users") == "list users"
+  expect solution.route("GET", "/users/") == "list users"
+  expect solution.route("POST", "/users") == "create user"
+  expect solution.route("GET", "/users/42") == "show user 42"
+  expect solution.route("DELETE", "/users/7/") == "delete user 7"
+end test
+
+test "errors"
+  expect solution.route("PUT", "/users") == "405"
+  expect solution.route("POST", "/users/3") == "405"
+  expect solution.route("DELETE", "/") == "405"
+  expect solution.route("GET", "/nope") == "404"
+  expect solution.route("GET", "/users/1/posts") == "404"
+end test

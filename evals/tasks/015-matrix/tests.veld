@@ -1,0 +1,19 @@
+use solution
+
+test "transpose"
+  expect solution.transpose([[1, 2, 3], [4, 5, 6]]) == [[1, 4], [2, 5], [3, 6]]
+  expect solution.transpose([]) == []
+  expect solution.transpose([[7]]) == [[7]]
+end test
+
+test "identity"
+  expect solution.identity(3) == [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+  expect solution.identity(0) == []
+end test
+
+test "multiply"
+  expect solution.multiply([[1, 2], [3, 4]], [[5, 6], [7, 8]]) == Ok([[19, 22], [43, 50]])
+  expect solution.multiply([[1, 2, 3]], [[1], [2], [3]]) == Ok([[14]])
+  expect solution.multiply([[1, 2]], [[1, 2]]) == Err("dimension mismatch")
+  expect solution.multiply([[2, 0], [0, 2]], solution.identity(2)) == Ok([[2, 0], [0, 2]])
+end test

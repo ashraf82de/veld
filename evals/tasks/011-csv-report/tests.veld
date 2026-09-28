@@ -1,0 +1,20 @@
+use std.str
+use solution
+
+test "sums by category"
+  let text = str.join(["category,amount", "food,12", "rent,500", "food,8"], "\n")
+  expect solution.totals(text) == Ok(["food: 20", "rent: 500"])
+end test
+
+test "quoted fields and blank lines"
+  let text = str.join(["category,amount", "", "\"office, misc\",5", "\"office, misc\",6", ""], "\n")
+  expect solution.totals(text) == Ok(["office, misc: 11"])
+end test
+
+test "errors"
+  expect solution.totals("") == Err("bad header")
+  expect solution.totals("name,amount") == Err("bad header")
+  expect solution.totals("category,amount") == Ok([])
+  expect solution.totals("category,amount\nfood,x") == Err("bad row 2")
+  expect solution.totals("category,amount\nfood,1\nfood,2,3") == Err("bad row 3")
+end test

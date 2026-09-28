@@ -1,0 +1,21 @@
+use solution
+
+test "emails"
+  expect solution.emails("write to bob.smith@mail.example.com or a_b@x.io, not @nobody") == ["bob.smith@mail.example.com", "a_b@x.io"]
+  expect solution.emails("nothing here") == []
+end test
+
+test "dates"
+  expect solution.is_iso_date("2024-02-29")
+  expect solution.is_iso_date("1999-12-31")
+  expect not solution.is_iso_date("2024-13-01")
+  expect not solution.is_iso_date("2024-00-10")
+  expect not solution.is_iso_date("2024-1-1")
+  expect not solution.is_iso_date("x2024-01-01")
+  expect not solution.is_iso_date("2024-01-32")
+end test
+
+test "redaction"
+  expect solution.redact_digits("call 555-1234 or 99") == "call #-# or #"
+  expect solution.redact_digits("none") == "none"
+end test

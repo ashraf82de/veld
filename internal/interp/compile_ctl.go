@@ -1,6 +1,8 @@
 package interp
 
 import (
+	"strings"
+
 	"github.com/ashraf82de/veld/internal/syntax"
 	"github.com/ashraf82de/veld/internal/types"
 )
@@ -264,7 +266,69 @@ type armCode struct {
 	body  code
 }
 
+// matchMulti compiles `match a, b`: the values are matched column by column,
+// without building the TupleN constructor the checker sees.
+func (c *compiler) matchMulti(e *syntax.MatchExpr) code {
+	n := len(e.Values)
+	scruts := c.exprs(e.Values)
+	exits := false
+	for _, v := range e.Values {
+		exits = exits || c.mayExit(v)
+	}
+	type multiArm struct {
+		pats  []matcher
+		guard bcode
+		body  code
+	}
+	arms := make([]multiArm, len(e.Arms))
+	for i, a := range e.Arms {
+		c.fs.push()
+		tp := a.Pattern.(*syntax.CtorPat)
+		arms[i].pats = make([]matcher, n)
+		for j, sub := range tp.Args {
+			arms[i].pats[j] = c.pattern(sub)
+		}
+		if a.Guard != nil {
+			arms[i].guard = c.boolExpr(a.Guard)
+		}
+		arms[i].body = c.block(a.Body)
+		c.fs.pop()
+	}
+	sp := e.Span
+	return func(f *frame) Value {
+		var vals [4]Value
+		for i, s := range scruts {
+			vals[i] = s(f)
+			if exits && f.ctl != ctlNone {
+				return nil
+			}
+		}
+	next:
+		for i := range arms {
+			a := &arms[i]
+			for j, m := range a.pats {
+				if m != nil && !m(f, vals[j]) {
+					continue next
+				}
+			}
+			if a.guard != nil && !a.guard(f) {
+				continue
+			}
+			return a.body(f)
+		}
+		parts := make([]string, n)
+		for i := range parts {
+			parts[i] = Repr(vals[i])
+		}
+		f.th.fail("R303", sp, "no case matched values %s", strings.Join(parts, ", "))
+		return nil
+	}
+}
+
 func (c *compiler) match(e *syntax.MatchExpr) code {
+	if e.Values != nil {
+		return c.matchMulti(e)
+	}
 	scrut := c.expr(e.X)
 	exits := c.mayExit(e.X)
 	arms := make([]armCode, len(e.Arms))

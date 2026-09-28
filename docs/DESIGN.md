@@ -93,9 +93,9 @@ dependency on training-data familiarity with a large API surface.
 
 ## Known trade-offs
 
-- **No tuples.** Records are clearer but matching two values at once is
-  clumsier; evals show models reach for `match [a, b]` with mixed types.
-  Candidate for an RFC.
+- **No tuples.** Records are clearer, and the one place tuples hurt, matching
+  on two values at once, is covered by `match a, b` (RFC 0001), which has no
+  tuple type or value. Tuples elsewhere remain a candidate for an RFC.
 - **Named arguments add tokens** for 3+ argument calls. Judged worth it.
 - **Or-pattern/suffix-pattern exhaustiveness** is conservative: list patterns
   with elements after `..rest` count as covering nothing.

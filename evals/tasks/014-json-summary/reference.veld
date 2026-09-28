@@ -1,0 +1,62 @@
+use std.json
+use std.list
+use std.map
+use std.math
+
+record Person
+  name: Str
+  age: Int
+end record
+
+fn person(j: Json) -> Option[Person]
+  let name = json.get(j, "name")?
+  let age = json.get(j, "age")?
+  match name, age
+    case JStr(n), JNum(a) => Some(Person{name: n, age: math.round(a)})
+    case _ => None
+  end match
+end fn
+
+pub fn summarize(text: Str) -> Result[Str, Str]
+  let doc = match json.parse(text)
+    case Ok(d) => d
+    case Err(e) => return Err(e)
+  end match
+  let items = match doc
+    case JArr(items) => items
+    case _ => return Err("expected an array")
+  end match
+  var people: List[Person] = []
+  var index = 0
+  for item in items
+    match person(item)
+      case Some(p) => set people = list.push(people, p)
+      case None => return Err("bad person at index ${index}")
+    end match
+    set index = index + 1
+  end for
+  let count = list.len(people)
+  let total = list.sum(list.map(people, fn(p) => p.age))
+  let oldest = match list.max_by(people, key: fn(p) => p.age)
+    case Some(p) => json.string(p.name)
+    case None => JNull
+  end match
+  let average = if count == 0
+    0.0
+  else
+    math.to_float(total) / math.to_float(count)
+  end if
+  let names = list.sort(list.map(people, fn(p) => p.name))
+  Ok(
+    json.encode(
+      json.object(
+        {
+          "count": json.int(count),
+          "oldest": oldest,
+          "average_age": json.number(average),
+          "names": json.array(list.map(names, json.string)),
+        },
+      ),
+    ),
+  )
+end fn

@@ -1,0 +1,30 @@
+use std.csv
+use std.list
+use std.map
+use std.str
+
+pub fn totals(text: Str) -> Result[List[Str], Str]
+  let rows = csv.parse(text)?
+  match rows
+    case [] => Err("bad header")
+    case [header, ..data]
+      if header != ["category", "amount"]
+        return Err("bad header")
+      end if
+      var sums: Map[Str, Int] = {}
+      var line = 1
+      for row in data
+        set line = line + 1
+        match row
+          case [category, amount]
+            match str.to_int(amount)
+              case Some(n) => set sums = map.update(sums, key: category, default: 0, f: fn(total) => total + n)
+              case None => return Err("bad row ${line}")
+            end match
+          case _ => return Err("bad row ${line}")
+        end match
+      end for
+      let names = list.sort(map.keys(sums))
+      Ok(list.map(names, fn(name) => "${name}: ${map.get_or(sums, key: name, default: 0)}"))
+  end match
+end fn

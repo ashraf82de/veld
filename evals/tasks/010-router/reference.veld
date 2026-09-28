@@ -1,0 +1,17 @@
+use std.list
+use std.str
+
+pub fn route(method: Str, path: Str) -> Str
+  let segments = str.split(path, "/") |> list.filter(fn(s) => s != "")
+  match method, segments
+    case "GET", [] => "home"
+    case "GET", ["users"] => "list users"
+    case "POST", ["users"] => "create user"
+    case "GET", ["users", id] => "show user ${id}"
+    case "DELETE", ["users", id] => "delete user ${id}"
+    case _, [] => "405"
+    case _, ["users"] => "405"
+    case _, ["users", _] => "405"
+    case _ => "404"
+  end match
+end fn

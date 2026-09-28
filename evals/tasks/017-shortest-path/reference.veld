@@ -1,0 +1,57 @@
+use std.list
+use std.map
+
+pub record Edge
+  from: Str
+  to: Str
+  cost: Int
+end record
+
+fn adjacency(edges: List[Edge]) -> Map[Str, List[Edge]]
+  var out: Map[Str, List[Edge]] = {}
+  for e in edges
+    set out = map.update(out, key: e.from, default: [], f: fn(es) => list.push(es, e))
+  end for
+  out
+end fn
+
+pub fn shortest(edges: List[Edge], from: Str, to: Str) -> Option[Int]
+  let graph = adjacency(edges)
+  var dist: Map[Str, Int] = {from: 0}
+  var done: Map[Str, Bool] = {}
+  while true
+    var best: Option[Str] = None
+    var best_cost = 0
+    for node in map.keys(dist)
+      if not map.has(done, node)
+        let d = map.get_or(dist, key: node, default: 0)
+        match best
+          case None
+            set best = Some(node)
+            set best_cost = d
+          case Some(_)
+            if d < best_cost
+              set best = Some(node)
+              set best_cost = d
+            end if
+        end match
+      end if
+    end for
+    match best
+      case None => break
+      case Some(node)
+        set done = map.put(done, key: node, value: true)
+        for e in map.get_or(graph, key: node, default: [])
+          let candidate = best_cost + e.cost
+          match map.get(dist, e.to)
+            case Some(existing)
+              if candidate < existing
+                set dist = map.put(dist, key: e.to, value: candidate)
+              end if
+            case None => set dist = map.put(dist, key: e.to, value: candidate)
+          end match
+        end for
+    end match
+  end while
+  map.get(dist, to)
+end fn

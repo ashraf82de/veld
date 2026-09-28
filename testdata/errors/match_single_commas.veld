@@ -1,0 +1,7 @@
+# expect: E509
+fn f(a: Int, b: Int) -> Int
+  match a
+    case 0, 1 => 1
+    case _ => 0
+  end match
+end fn

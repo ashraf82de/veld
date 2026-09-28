@@ -44,6 +44,10 @@ func (c *Checker) checkMatch(e *syntax.MatchExpr, want Type) Type {
 	}
 	if w := missing(toMatrix(rows), []Type{st}, c); w != nil {
 		ex := showSpat(w[0])
+		if e.Values != nil {
+			// Show `A, B` rather than the TupleN constructor the parser used.
+			ex = strings.TrimSuffix(strings.TrimPrefix(ex, "Tuple"+strconv.Itoa(len(e.Values))+"("), ")")
+		}
 		d := c.errf("E501", e.Span, "match is not exhaustive: missing case `%s`", ex)
 		indent := strings.Repeat(" ", max(0, e.EndPos.Col-1)+2)
 		d.WithFix("add the missing case", diag.Span{File: e.Span.File, Start: lineStart(e.EndPos), End: lineStart(e.EndPos)}, indent+"case "+ex+" => ???\n")

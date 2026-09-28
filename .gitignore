@@ -2,3 +2,5 @@ veld
 /veld.exe
 todos.json
 *.test
+veld.exe
+*.exe

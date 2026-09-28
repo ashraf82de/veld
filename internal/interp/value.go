@@ -2,88 +2,41 @@
 package interp
 
 import (
+	"hash/maphash"
 	"math"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/ashraf82de/veld/internal/pds"
 	"github.com/ashraf82de/veld/internal/syntax"
 	"github.com/ashraf82de/veld/internal/types"
 )
 
-// Value is a runtime value: int64, float64, bool, string, Unit, List, *Map,
+// Value is a runtime value: int64, float64, bool, string, Unit, List, Map,
 // *Record, *Variant, *Closure, *FuncRef or *Native.
-type Value any
+type Value = any
 
 type UnitT struct{}
 
 var Unit = UnitT{}
 
-type List []Value
+// List is an immutable persistent vector.
+type List = *pds.Vec
 
-// Map is an immutable, insertion-ordered map.
-type Map struct {
-	Keys  []Value
-	Vals  []Value
-	index map[string]int
-}
+// Map is an immutable, insertion-ordered persistent hash map.
+type Map = *pds.Map
 
-func NewMap() *Map { return &Map{index: map[string]int{}} }
+var mapCfg = &pds.Config{Hash: HashOf, Equal: Equal}
 
-func (m *Map) Get(k Value) (Value, bool) {
-	i, ok := m.index[KeyOf(k)]
-	if !ok {
-		return nil, false
-	}
-	return m.Vals[i], true
-}
+// NewMap returns an empty map.
+func NewMap() Map { return pds.NewMap(mapCfg) }
 
-// Put returns a new map with k set to v.
-func (m *Map) Put(k, v Value) *Map {
-	key := KeyOf(k)
-	out := &Map{index: make(map[string]int, len(m.index)+1)}
-	out.Keys = append(make([]Value, 0, len(m.Keys)+1), m.Keys...)
-	out.Vals = append(make([]Value, 0, len(m.Vals)+1), m.Vals...)
-	for kk, i := range m.index {
-		out.index[kk] = i
-	}
-	if i, ok := out.index[key]; ok {
-		out.Vals[i] = v
-		return out
-	}
-	out.index[key] = len(out.Keys)
-	out.Keys = append(out.Keys, k)
-	out.Vals = append(out.Vals, v)
-	return out
-}
+// NewList copies xs into a list.
+func NewList(xs []Value) List { return pds.FromSlice(xs) }
 
-// putInPlace mutates m; only for maps under construction.
-func (m *Map) putInPlace(k, v Value) {
-	key := KeyOf(k)
-	if i, ok := m.index[key]; ok {
-		m.Vals[i] = v
-		return
-	}
-	m.index[key] = len(m.Keys)
-	m.Keys = append(m.Keys, k)
-	m.Vals = append(m.Vals, v)
-}
-
-func (m *Map) Remove(k Value) *Map {
-	key := KeyOf(k)
-	if _, ok := m.index[key]; !ok {
-		return m
-	}
-	out := NewMap()
-	for i, kk := range m.Keys {
-		if KeyOf(kk) != key {
-			out.putInPlace(kk, m.Vals[i])
-		}
-	}
-	return out
-}
-
-func KeyOf(v Value) string { return Repr(v) }
+// EmptyList is the list with no elements.
+func EmptyList() List { return pds.Empty() }
 
 type Record struct {
 	Type   *types.TypeInfo
@@ -165,23 +118,27 @@ func writeRepr(b *strings.Builder, v Value) {
 		b.WriteString("Unit")
 	case List:
 		b.WriteByte('[')
-		for i, x := range v {
+		v.Range(func(i int, x Value) bool {
 			if i > 0 {
 				b.WriteString(", ")
 			}
 			writeRepr(b, x)
-		}
+			return true
+		})
 		b.WriteByte(']')
-	case *Map:
+	case Map:
 		b.WriteByte('{')
-		for i, k := range v.Keys {
-			if i > 0 {
+		first := true
+		v.Range(func(k, val Value) bool {
+			if !first {
 				b.WriteString(", ")
 			}
+			first = false
 			writeRepr(b, k)
 			b.WriteString(": ")
-			writeRepr(b, v.Vals[i])
-		}
+			writeRepr(b, val)
+			return true
+		})
 		b.WriteByte('}')
 	case *Record:
 		b.WriteString(v.Type.Name)
@@ -250,27 +207,27 @@ func Equal(a, b Value) bool {
 		return a == b
 	case List:
 		bl, ok := b.(List)
-		if !ok || len(a) != len(bl) {
+		if !ok || a.Len() != bl.Len() {
 			return false
 		}
-		for i := range a {
-			if !Equal(a[i], bl[i]) {
-				return false
-			}
-		}
-		return true
-	case *Map:
-		bm, ok := b.(*Map)
-		if !ok || len(a.Keys) != len(bm.Keys) {
+		eq := true
+		a.Range(func(i int, x Value) bool {
+			eq = Equal(x, bl.Get(i))
+			return eq
+		})
+		return eq
+	case Map:
+		bm, ok := b.(Map)
+		if !ok || a.Len() != bm.Len() {
 			return false
 		}
-		for i, k := range a.Keys {
-			v, ok := bm.Get(k)
-			if !ok || !Equal(a.Vals[i], v) {
-				return false
-			}
-		}
-		return true
+		eq := true
+		a.Range(func(k, v Value) bool {
+			w, found := bm.Get(k)
+			eq = found && Equal(v, w)
+			return eq
+		})
+		return eq
 	case *Record:
 		br, ok := b.(*Record)
 		if !ok || a.Type != br.Type {
@@ -325,10 +282,10 @@ func Compare(a, b Value) int {
 }
 
 func sortValues(xs List, key func(Value) Value) List {
-	out := append(List{}, xs...)
+	out := xs.ToSlice()
 	if key == nil {
 		sort.SliceStable(out, func(i, j int) bool { return Compare(out[i], out[j]) < 0 })
-		return out
+		return NewList(out)
 	}
 	keys := make([]Value, len(out))
 	for i, x := range out {
@@ -339,9 +296,70 @@ func sortValues(xs List, key func(Value) Value) List {
 		idx[i] = i
 	}
 	sort.SliceStable(idx, func(i, j int) bool { return Compare(keys[idx[i]], keys[idx[j]]) < 0 })
-	res := make(List, len(out))
+	res := make([]Value, len(out))
 	for i, k := range idx {
 		res[i] = out[k]
 	}
-	return res
+	return NewList(res)
+}
+
+var hashSeed = maphash.MakeSeed()
+
+func mix(h uint64) uint64 {
+	h ^= h >> 33
+	h *= 0xff51afd7ed558ccd
+	h ^= h >> 33
+	h *= 0xc4ceb9fe1a85ec53
+	h ^= h >> 33
+	return h
+}
+
+// HashOf is a structural hash consistent with Equal.
+func HashOf(v Value) uint64 {
+	switch v := v.(type) {
+	case int64:
+		return mix(uint64(v))
+	case float64:
+		if v == 0 {
+			return mix(0)
+		}
+		return mix(math.Float64bits(v))
+	case bool:
+		if v {
+			return 0x9e3779b97f4a7c15
+		}
+		return 0x7f4a7c159e3779b9
+	case string:
+		return maphash.String(hashSeed, v)
+	case UnitT:
+		return 1
+	case List:
+		h := uint64(0x1234567)
+		v.Range(func(_ int, x Value) bool {
+			h = mix(h*31 + HashOf(x))
+			return true
+		})
+		return h
+	case Map:
+		// Order-independent, because Equal ignores insertion order.
+		var h uint64 = 0x7654321
+		v.Range(func(k, val Value) bool {
+			h += mix(HashOf(k)*31 + HashOf(val))
+			return true
+		})
+		return h
+	case *Record:
+		h := maphash.String(hashSeed, v.Type.Name)
+		for _, f := range v.Fields {
+			h = mix(h*31 + HashOf(f))
+		}
+		return h
+	case *Variant:
+		h := maphash.String(hashSeed, v.Ctor.Name)
+		for _, f := range v.Fields {
+			h = mix(h*31 + HashOf(f))
+		}
+		return h
+	}
+	return 0
 }

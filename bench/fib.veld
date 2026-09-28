@@ -1,0 +1,17 @@
+use std.io
+
+fn fib(n: Int) -> Int
+  if n < 2
+    n
+  else
+    fib(n - 1) + fib(n - 2)
+  end if
+end fn
+
+fn main() -> Unit uses io
+  io.print("fib(27) = ${fib(27)}")
+end fn
+
+test "fib"
+  expect fib(10) == 55
+end test

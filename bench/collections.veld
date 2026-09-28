@@ -1,0 +1,21 @@
+use std.io
+use std.list
+use std.map
+
+fn main() -> Unit uses io
+  var xs: List[Int] = []
+  var m: Map[Int, Int] = {}
+  for i in list.range(0, 20000)
+    set xs = list.push(xs, i)
+    set m = map.put(m, key: i, value: i * 2)
+  end for
+  var sum = 0
+  for i in list.range(0, 20000)
+    set sum = sum + map.get_or(m, key: i, default: 0)
+  end for
+  io.print("len = ${list.len(xs)} ${map.len(m)}")
+end fn
+
+test "collections"
+  expect 1 + 1 == 2
+end test

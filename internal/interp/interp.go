@@ -366,15 +366,15 @@ func (th *Thread) eval(e syntax.Expr, env *Env) Value {
 			return -v
 		}
 	case *syntax.ListLit:
-		out := make(List, len(e.Elems))
+		out := make([]Value, len(e.Elems))
 		for i, x := range e.Elems {
 			out[i] = th.eval(x, env)
 		}
-		return out
+		return NewList(out)
 	case *syntax.MapLit:
 		m := NewMap()
 		for _, en := range e.Entries {
-			m.putInPlace(th.eval(en.Key, env), th.eval(en.Value, env))
+			m = m.Put(th.eval(en.Key, env), th.eval(en.Value, env))
 		}
 		return m
 	case *syntax.RecordLit:
@@ -408,7 +408,7 @@ func (th *Thread) eval(e syntax.Expr, env *Env) Value {
 	case *syntax.MatchExpr:
 		return th.evalMatch(e, env)
 	case *syntax.ForExpr:
-		items := th.eval(e.Iter, env).(List)
+		items := th.eval(e.Iter, env).(List).ToSlice()
 		for _, it := range items {
 			if th.loopBody(e.Body, env, e.Var, it) {
 				break
@@ -681,9 +681,7 @@ func (th *Thread) evalBinary(e *syntax.BinaryExpr, env *Env) Value {
 	case string:
 		return a + r.(string)
 	case List:
-		b := r.(List)
-		out := make(List, 0, len(a)+len(b))
-		return append(append(out, a...), b...)
+		return a.Concat(r.(List))
 	}
 	th.fail("R999", e.Span, "bad operands for %s", e.Op)
 	return nil
@@ -748,27 +746,28 @@ func (th *Thread) bind(p syntax.Pattern, v Value, env *Env) bool {
 		return true
 	case *syntax.ListPat:
 		l := v.(List)
+		n := l.Len()
 		fixed := len(p.Elems) + len(p.Suffix)
 		if p.HasRest {
-			if len(l) < fixed {
+			if n < fixed {
 				return false
 			}
-		} else if len(l) != fixed {
+		} else if n != fixed {
 			return false
 		}
 		for i, ep := range p.Elems {
-			if !th.bind(ep, l[i], env) {
+			if !th.bind(ep, l.Get(i), env) {
 				return false
 			}
 		}
-		off := len(l) - len(p.Suffix)
+		off := n - len(p.Suffix)
 		for i, ep := range p.Suffix {
-			if !th.bind(ep, l[off+i], env) {
+			if !th.bind(ep, l.Get(off+i), env) {
 				return false
 			}
 		}
 		if p.HasRest && p.Rest != "" && p.Rest != "_" {
-			env.Define(p.Rest, l[len(p.Elems):off])
+			env.Define(p.Rest, l.Slice(len(p.Elems), off))
 		}
 		return true
 	}

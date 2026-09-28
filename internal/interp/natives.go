@@ -103,17 +103,18 @@ func natives() map[string]*Native {
 	})
 	def("str.join", func(th *Thread, a []Value) Value {
 		l := a[0].(List)
-		parts := make([]string, len(l))
-		for i, x := range l {
-			parts[i] = x.(string)
-		}
+		parts := make([]string, 0, l.Len())
+		l.Range(func(_ int, x Value) bool {
+			parts = append(parts, x.(string))
+			return true
+		})
 		return strings.Join(parts, a[1].(string))
 	})
 	def("str.lines", func(th *Thread, a []Value) Value {
 		s := strings.ReplaceAll(a[0].(string), "\r\n", "\n")
 		s = strings.TrimSuffix(s, "\n")
 		if s == "" {
-			return List{}
+			return EmptyList()
 		}
 		return strList(strings.Split(s, "\n"))
 	})
@@ -169,14 +170,11 @@ func natives() map[string]*Native {
 		return th.in.some(f)
 	})
 	def("str.chars", func(th *Thread, a []Value) Value {
-		var out List
+		var out []Value
 		for _, r := range a[0].(string) {
 			out = append(out, string(r))
 		}
-		if out == nil {
-			return List{}
-		}
-		return out
+		return NewList(out)
 	})
 	def("str.code", func(th *Thread, a []Value) Value {
 		s := a[0].(string)
@@ -224,82 +222,80 @@ func natives() map[string]*Native {
 	})
 
 	// ---- list ----
-	def("list.len", func(th *Thread, a []Value) Value { return int64(len(a[0].(List))) })
+	def("list.len", func(th *Thread, a []Value) Value { return int64(a[0].(List).Len()) })
 	def("list.get", func(th *Thread, a []Value) Value {
 		l, i := a[0].(List), a[1].(int64)
-		if i < 0 || i >= int64(len(l)) {
+		if i < 0 || i >= int64(l.Len()) {
 			return th.in.none()
 		}
-		return th.in.some(l[i])
+		return th.in.some(l.Get(int(i)))
 	})
-	def("list.push", func(th *Thread, a []Value) Value {
-		l := a[0].(List)
-		out := make(List, len(l), len(l)+1)
-		copy(out, l)
-		return append(out, a[1])
-	})
+	def("list.push", func(th *Thread, a []Value) Value { return a[0].(List).Push(a[1]) })
 	def("list.prepend", func(th *Thread, a []Value) Value {
-		l := a[0].(List)
-		return append(List{a[1]}, l...)
+		return NewList(append([]Value{a[1]}, a[0].(List).ToSlice()...))
 	})
 	def("list.set_at", func(th *Thread, a []Value) Value {
 		l, i := a[0].(List), a[1].(int64)
-		if i < 0 || i >= int64(len(l)) {
-			th.nativeFail("list.set_at: index %d out of range for list of length %d", i, len(l))
+		if i < 0 || i >= int64(l.Len()) {
+			th.nativeFail("list.set_at: index %d out of range for list of length %d", i, l.Len())
 		}
-		out := append(List{}, l...)
-		out[i] = a[2]
-		return out
+		return l.Set(int(i), a[2])
 	})
 	def("list.remove_at", func(th *Thread, a []Value) Value {
 		l, i := a[0].(List), a[1].(int64)
-		if i < 0 || i >= int64(len(l)) {
-			th.nativeFail("list.remove_at: index %d out of range for list of length %d", i, len(l))
+		if i < 0 || i >= int64(l.Len()) {
+			th.nativeFail("list.remove_at: index %d out of range for list of length %d", i, l.Len())
 		}
-		out := append(List{}, l[:i]...)
-		return append(out, l[i+1:]...)
+		return l.Slice(0, int(i)).Concat(l.Slice(int(i)+1, l.Len()))
 	})
 	def("list.range", func(th *Thread, a []Value) Value {
 		s, e := a[0].(int64), a[1].(int64)
 		if e-s > 50_000_000 {
 			th.nativeFail("list.range: range of %d elements is too large", e-s)
 		}
-		out := List{}
+		if e <= s {
+			return EmptyList()
+		}
+		out := make([]Value, 0, e-s)
 		for i := s; i < e; i++ {
 			out = append(out, i)
 		}
-		return out
+		return NewList(out)
 	})
 	def("list.map", func(th *Thread, a []Value) Value {
 		l := a[0].(List)
-		out := make(List, len(l))
-		for i, x := range l {
-			out[i] = th.callValue(a[1], []Value{x}, th.here())
-		}
-		return out
+		out := make([]Value, 0, l.Len())
+		l.Range(func(_ int, x Value) bool {
+			out = append(out, th.callValue(a[1], []Value{x}, th.here()))
+			return true
+		})
+		return NewList(out)
 	})
 	def("list.map_indexed", func(th *Thread, a []Value) Value {
 		l := a[0].(List)
-		out := make(List, len(l))
-		for i, x := range l {
-			out[i] = th.callValue(a[1], []Value{int64(i), x}, th.here())
-		}
-		return out
+		out := make([]Value, 0, l.Len())
+		l.Range(func(i int, x Value) bool {
+			out = append(out, th.callValue(a[1], []Value{int64(i), x}, th.here()))
+			return true
+		})
+		return NewList(out)
 	})
 	def("list.filter", func(th *Thread, a []Value) Value {
-		out := List{}
-		for _, x := range a[0].(List) {
+		var out []Value
+		a[0].(List).Range(func(_ int, x Value) bool {
 			if th.callValue(a[1], []Value{x}, th.here()) == true {
 				out = append(out, x)
 			}
-		}
-		return out
+			return true
+		})
+		return NewList(out)
 	})
 	def("list.fold", func(th *Thread, a []Value) Value {
 		acc := a[1]
-		for _, x := range a[0].(List) {
+		a[0].(List).Range(func(_ int, x Value) bool {
 			acc = th.callValue(a[2], []Value{acc, x}, th.here())
-		}
+			return true
+		})
 		return acc
 	})
 	def("list.sort", func(th *Thread, a []Value) Value { return sortValues(a[0].(List), nil) })
@@ -307,67 +303,65 @@ func natives() map[string]*Native {
 		return sortValues(a[0].(List), func(v Value) Value { return th.callValue(a[1], []Value{v}, th.here()) })
 	})
 	def("list.reverse", func(th *Thread, a []Value) Value {
-		l := a[0].(List)
-		out := make(List, len(l))
-		for i, x := range l {
-			out[len(l)-1-i] = x
+		xs := a[0].(List).ToSlice()
+		for i, j := 0, len(xs)-1; i < j; i, j = i+1, j-1 {
+			xs[i], xs[j] = xs[j], xs[i]
 		}
-		return out
+		return NewList(xs)
 	})
 	def("list.take", func(th *Thread, a []Value) Value {
 		l := a[0].(List)
-		n := clamp(a[1].(int64), 0, int64(len(l)))
-		return append(List{}, l[:n]...)
+		return l.Slice(0, int(clamp(a[1].(int64), 0, int64(l.Len()))))
 	})
 	def("list.drop", func(th *Thread, a []Value) Value {
 		l := a[0].(List)
-		n := clamp(a[1].(int64), 0, int64(len(l)))
-		return append(List{}, l[n:]...)
+		return l.Slice(int(clamp(a[1].(int64), 0, int64(l.Len()))), l.Len())
 	})
 	def("list.slice", func(th *Thread, a []Value) Value {
 		l := a[0].(List)
-		n := int64(len(l))
+		n := int64(l.Len())
 		s, e := clamp(a[1].(int64), 0, n), clamp(a[2].(int64), 0, n)
 		if e < s {
-			return List{}
+			return EmptyList()
 		}
-		return append(List{}, l[s:e]...)
+		return l.Slice(int(s), int(e))
 	})
 	def("list.unique", func(th *Thread, a []Value) Value {
-		seen := map[string]bool{}
-		out := List{}
-		for _, x := range a[0].(List) {
-			k := KeyOf(x)
-			if !seen[k] {
-				seen[k] = true
+		seen := NewMap()
+		var out []Value
+		a[0].(List).Range(func(_ int, x Value) bool {
+			if !seen.Has(x) {
+				seen = seen.Put(x, true)
 				out = append(out, x)
 			}
-		}
-		return out
+			return true
+		})
+		return NewList(out)
 	})
 	def("list.repeat", func(th *Thread, a []Value) Value {
 		n := a[1].(int64)
 		if n < 0 {
 			th.nativeFail("list.repeat: times must be >= 0, got %d", n)
 		}
-		out := make(List, n)
+		out := make([]Value, n)
 		for i := range out {
 			out[i] = a[0]
 		}
-		return out
+		return NewList(out)
 	})
 	extreme := func(sign int) func(th *Thread, a []Value) Value {
 		return func(th *Thread, a []Value) Value {
 			l := a[0].(List)
-			if len(l) == 0 {
+			if l.Len() == 0 {
 				return th.in.none()
 			}
-			best := l[0]
-			for _, x := range l[1:] {
+			best := l.Get(0)
+			l.Range(func(_ int, x Value) bool {
 				if Compare(x, best)*sign > 0 {
 					best = x
 				}
-			}
+				return true
+			})
 			return th.in.some(best)
 		}
 	}
@@ -378,35 +372,32 @@ func natives() map[string]*Native {
 		if n <= 0 {
 			th.nativeFail("list.chunks: size must be > 0, got %d", n)
 		}
-		out := List{}
-		for i := int64(0); i < int64(len(l)); i += n {
-			out = append(out, append(List{}, l[i:min(i+n, int64(len(l)))]...))
+		var out []Value
+		for i := int64(0); i < int64(l.Len()); i += n {
+			out = append(out, l.Slice(int(i), int(min(i+n, int64(l.Len())))))
 		}
-		return out
+		return NewList(out)
 	})
 
 	// ---- map ----
-	def("map.len", func(th *Thread, a []Value) Value { return int64(len(a[0].(*Map).Keys)) })
+	def("map.len", func(th *Thread, a []Value) Value { return int64(a[0].(Map).Len()) })
 	def("map.get", func(th *Thread, a []Value) Value {
-		if v, ok := a[0].(*Map).Get(a[1]); ok {
+		if v, ok := a[0].(Map).Get(a[1]); ok {
 			return th.in.some(v)
 		}
 		return th.in.none()
 	})
-	def("map.has", func(th *Thread, a []Value) Value { _, ok := a[0].(*Map).Get(a[1]); return ok })
-	def("map.put", func(th *Thread, a []Value) Value { return a[0].(*Map).Put(a[1], a[2]) })
-	def("map.remove", func(th *Thread, a []Value) Value { return a[0].(*Map).Remove(a[1]) })
-	def("map.keys", func(th *Thread, a []Value) Value { return append(List{}, a[0].(*Map).Keys...) })
-	def("map.values", func(th *Thread, a []Value) Value { return append(List{}, a[0].(*Map).Vals...) })
+	def("map.has", func(th *Thread, a []Value) Value { return a[0].(Map).Has(a[1]) })
+	def("map.put", func(th *Thread, a []Value) Value { return a[0].(Map).Put(a[1], a[2]) })
+	def("map.remove", func(th *Thread, a []Value) Value { return a[0].(Map).Remove(a[1]) })
+	def("map.keys", func(th *Thread, a []Value) Value { return NewList(a[0].(Map).Keys()) })
+	def("map.values", func(th *Thread, a []Value) Value { return NewList(a[0].(Map).Values()) })
 	def("map.merge", func(th *Thread, a []Value) Value {
-		x, y := a[0].(*Map), a[1].(*Map)
-		out := NewMap()
-		for i, k := range x.Keys {
-			out.putInPlace(k, x.Vals[i])
-		}
-		for i, k := range y.Keys {
-			out.putInPlace(k, y.Vals[i])
-		}
+		out := a[0].(Map)
+		a[1].(Map).Range(func(k, v Value) bool {
+			out = out.Put(k, v)
+			return true
+		})
 		return out
 	})
 
@@ -527,9 +518,9 @@ func natives() map[string]*Native {
 	})
 	def("rand.float", func(th *Thread, a []Value) Value { return rand.Float64() })
 	def("rand.shuffle", func(th *Thread, a []Value) Value {
-		out := append(List{}, a[0].(List)...)
+		out := a[0].(List).ToSlice()
 		rand.Shuffle(len(out), func(i, j int) { out[i], out[j] = out[j], out[i] })
-		return out
+		return NewList(out)
 	})
 
 	// ---- json ----
@@ -570,11 +561,11 @@ func natives() map[string]*Native {
 }
 
 func strList(xs []string) List {
-	out := make(List, len(xs))
+	out := make([]Value, len(xs))
 	for i, x := range xs {
 		out[i] = x
 	}
-	return out
+	return NewList(out)
 }
 
 func (in *Interp) out(s string) {
@@ -613,18 +604,18 @@ func (th *Thread) decodeJSON(dec *json.Decoder) (Value, error) {
 	case json.Delim:
 		switch t {
 		case '[':
-			items := List{}
+			var elems []Value
 			for dec.More() {
 				v, err := th.decodeJSON(dec)
 				if err != nil {
 					return nil, err
 				}
-				items = append(items, v)
+				elems = append(elems, v)
 			}
 			if _, err := dec.Token(); err != nil {
 				return nil, err
 			}
-			return in.ctor("JArr", items), nil
+			return in.ctor("JArr", NewList(elems)), nil
 		case '{':
 			m := NewMap()
 			for dec.More() {
@@ -636,7 +627,7 @@ func (th *Thread) decodeJSON(dec *json.Decoder) (Value, error) {
 				if err != nil {
 					return nil, err
 				}
-				m.putInPlace(kt.(string), v)
+				m = m.Put(kt.(string), v)
 			}
 			if _, err := dec.Token(); err != nil {
 				return nil, err
@@ -675,24 +666,27 @@ func encodeJSON(b *bytes.Buffer, v Value, indent, cur string) {
 	case "JArr":
 		items := vv.Fields[0].(List)
 		b.WriteByte('[')
-		for i, x := range items {
+		items.Range(func(i int, x Value) bool {
 			if i > 0 {
 				b.WriteByte(',')
 			}
 			nl(cur + indent)
 			encodeJSON(b, x, indent, cur+indent)
-		}
-		if len(items) > 0 {
+			return true
+		})
+		if items.Len() > 0 {
 			nl(cur)
 		}
 		b.WriteByte(']')
 	case "JObj":
-		m := vv.Fields[0].(*Map)
+		m := vv.Fields[0].(Map)
 		b.WriteByte('{')
-		for i, k := range m.Keys {
-			if i > 0 {
+		first := true
+		m.Range(func(k, val Value) bool {
+			if !first {
 				b.WriteByte(',')
 			}
+			first = false
 			nl(cur + indent)
 			ks, _ := json.Marshal(k.(string))
 			b.Write(ks)
@@ -700,9 +694,10 @@ func encodeJSON(b *bytes.Buffer, v Value, indent, cur string) {
 			if indent != "" {
 				b.WriteByte(' ')
 			}
-			encodeJSON(b, m.Vals[i], indent, cur+indent)
-		}
-		if len(m.Keys) > 0 {
+			encodeJSON(b, val, indent, cur+indent)
+			return true
+		})
+		if m.Len() > 0 {
 			nl(cur)
 		}
 		b.WriteByte('}')
@@ -734,7 +729,7 @@ func (th *Thread) httpResult(resp *http.Response, err error) Value {
 	hm := th.httpModule()
 	headers := NewMap()
 	for k, vs := range resp.Header {
-		headers.putInPlace(strings.ToLower(k), strings.Join(vs, ", "))
+		headers = headers.Put(strings.ToLower(k), strings.Join(vs, ", "))
 	}
 	return th.in.ok(&Record{Type: hm.Types["Response"], Fields: []Value{int64(resp.StatusCode), headers, string(body)}})
 }
@@ -746,11 +741,11 @@ func (th *Thread) serve(port int64, handler Value) Value {
 		body, _ := io.ReadAll(r.Body)
 		query := NewMap()
 		for k, vs := range r.URL.Query() {
-			query.putInPlace(k, strings.Join(vs, ","))
+			query = query.Put(k, strings.Join(vs, ","))
 		}
 		headers := NewMap()
 		for k, vs := range r.Header {
-			headers.putInPlace(strings.ToLower(k), strings.Join(vs, ", "))
+			headers = headers.Put(strings.ToLower(k), strings.Join(vs, ", "))
 		}
 		req := &Record{Type: reqType, Fields: []Value{r.Method, r.URL.Path, query, headers, string(body)}}
 		t := th.in.NewThread(th.mod)
@@ -762,9 +757,10 @@ func (th *Thread) serve(port int64, handler Value) Value {
 			http.Error(w, "internal server error", 500)
 			return
 		}
-		for i, k := range resp.Fields[1].(*Map).Keys {
-			w.Header().Set(k.(string), resp.Fields[1].(*Map).Vals[i].(string))
-		}
+		resp.Fields[1].(Map).Range(func(k, v Value) bool {
+			w.Header().Set(k.(string), v.(string))
+			return true
+		})
 		w.WriteHeader(int(resp.Fields[0].(int64)))
 		io.WriteString(w, resp.Fields[2].(string))
 	})

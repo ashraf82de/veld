@@ -1,0 +1,36 @@
+# Regular expressions (RE2 syntax: no backreferences or lookaround). Every
+# function returns a Result because the pattern itself may be invalid.
+# Write patterns as raw strings, so backslashes need no escaping: """\d+""".
+
+## True if the pattern matches anywhere in text.
+pub extern fn is_match(pattern: Str, text: Str) -> Result[Bool, Str]
+
+## The first match, or None.
+pub extern fn find(pattern: Str, text: Str) -> Result[Option[Str], Str]
+
+## Every non-overlapping match, left to right.
+pub extern fn find_all(pattern: Str, text: Str) -> Result[List[Str], Str]
+
+## The groups of the first match: element 0 is the whole match, then one
+## element per group (an unmatched optional group is "").
+pub extern fn captures(pattern: Str, text: Str) -> Result[Option[List[Str]], Str]
+
+## Replaces every match. In `with`, $1, $2, ... insert capture groups (write
+## ${1} when a letter or digit follows, and $$ for a literal dollar sign).
+pub extern fn replace(text: Str, pattern: Str, with: Str) -> Result[Str, Str]
+
+## Splits text around every match of the pattern.
+pub extern fn split(text: Str, pattern: Str) -> Result[List[Str], Str]
+
+test "regex"
+  expect is_match("^[a-z]+[0-9]$", "abc1") == Ok(true)
+  expect is_match("^[a-z]+[0-9]$", "abc") == Ok(false)
+  expect find("[0-9]+", "room 42, floor 7") == Ok(Some("42"))
+  expect find_all("""\d+""", "room 42, floor 7") == Ok(["42", "7"])
+  expect captures("""(\w+)@(\w+)\.com""", "mail bob@example.com now") == Ok(Some(["bob@example.com", "bob", "example"]))
+  expect captures("x(y)?", "x") == Ok(Some(["x", ""]))
+  expect replace("a1b22", pattern: "[0-9]+", with: "#") == Ok("a#b#")
+  expect replace("john smith", pattern: """(\w+) (\w+)""", with: """$2 $1""") == Ok("smith john")
+  expect split("a, b;c", "[,;] ?") == Ok(["a", "b", "c"])
+  expect is_match("(", "x") != Ok(true)
+end test

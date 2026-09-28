@@ -1,0 +1,14 @@
+# Comma-separated values (RFC 4180): quoted fields, embedded commas, quotes and
+# newlines.
+
+## Parses text into rows of fields. Blank lines are skipped.
+pub extern fn parse(text: Str) -> Result[List[List[Str]], Str]
+
+## Renders rows as CSV, quoting fields when needed. Each row ends with a newline.
+pub extern fn encode(rows: List[List[Str]]) -> Str
+
+test "csv"
+  expect parse("a,b\n1,\"x,y\"\n") == Ok([["a", "b"], ["1", "x,y"]])
+  expect encode([["a", "b c"], ["1", "x,y"], ["q\"", ""]]) == "a,b c\n1,\"x,y\"\n\"q\"\"\",\n"
+  expect parse("a,\"b") != Ok([])
+end test

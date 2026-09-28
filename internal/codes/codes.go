@@ -18,7 +18,7 @@ var All = map[string]Info{
 	"E106": {"misplaced use", "`use` declarations must come before all other declarations."},
 	"E107": {"expected declaration", "Top-level items are `fn`, `type`, `record`, `test` and `use`. Veld has no global variables; use a zero-argument function."},
 	"E108": {"missing annotation", "Function parameters and return types are always annotated. Use `-> Unit` for functions that return nothing."},
-	"E109": {"unknown effect", "Effects are: io, fs, net, env, time, rand."},
+	"E109": {"unknown effect", "Effects are: io, fs, net, env, time, rand, proc, state."},
 	"E110": {"block closer", "Every block ends with `end` plus the keyword that opened it: end fn, end if, end match, end for, end while, end type, end record, end test. A mismatch means a block was not closed."},
 	"E111": {"type declaration syntax", "Sum types list variants with `case`:\n  type Shape\n    case Circle(radius: Float)\n    case Empty\n  end type"},
 	"E112": {"type argument syntax", "Type arguments use square brackets: List[Int], Map[Str, Int], Option[T]."},

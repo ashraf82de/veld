@@ -290,9 +290,9 @@ func natives() map[string]*Native {
 		})
 		return acc
 	})
-	def("list.sort", func(th *Thread, a []Value) Value { return sortValues(a[0].(List), nil) })
+	def("list.sort", func(th *Thread, a []Value) Value { return sortValues(a[0].(List), nil, false) })
 	def("list.sort_by", func(th *Thread, a []Value) Value {
-		return sortValues(a[0].(List), func(v Value) Value { return th.callValue(a[1], []Value{v}, th.site()) })
+		return sortValues(a[0].(List), func(v Value) Value { return th.callValue(a[1], []Value{v}, th.site()) }, false)
 	})
 	def("list.reverse", func(th *Thread, a []Value) Value {
 		xs := a[0].(List).ToSlice()
@@ -549,6 +549,7 @@ func natives() map[string]*Native {
 		resp, err := httpClient.Post(a[0].(string), a[2].(string), strings.NewReader(a[1].(string)))
 		return th.httpResult(resp, err)
 	})
+	registerExt(def)
 	return m
 }
 

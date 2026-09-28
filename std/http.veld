@@ -1,5 +1,8 @@
 # HTTP server and client. Every function needs the `net` effect.
 use std.json
+use std.list
+use std.map
+use std.str
 
 pub record Request
   method: Str
@@ -38,3 +41,55 @@ end fn
 pub fn html(status: Int, body: Str) -> Response
   Response{status: status, headers: {"content-type": "text/html; charset=utf-8"}, body: body}
 end fn
+
+## An error response as JSON: {"error": message}.
+pub fn error(status: Int, message: Str) -> Response
+  json_response(status, JObj({"error": JStr(message)}))
+end fn
+
+## A 302 redirect.
+pub fn redirect(location: Str) -> Response
+  Response{status: 302, headers: {"location": location}, body: ""}
+end fn
+
+## The non-empty parts of a path: segments("/todos/7/") == ["todos", "7"].
+## Route by matching on them: `case ["todos", id] => ...`.
+pub fn segments(path: Str) -> List[Str]
+  str.split(path, "/") |> list.filter(fn(s) => s != "")
+end fn
+
+## The query-string value for a name, or None.
+pub fn query_param(req: Request, name: Str) -> Option[Str]
+  map.get(req.query, name)
+end fn
+
+## A request header, or None. Header names are matched in lower case.
+pub fn header(req: Request, name: Str) -> Option[Str]
+  map.get(req.headers, str.lower(name))
+end fn
+
+## The request body parsed as JSON.
+pub fn json_body(req: Request) -> Result[Json, Str]
+  json.parse(req.body)
+end fn
+
+## A request with any method: http.request("PUT", url: u, headers: {"x": "y"}, body: "...").
+pub extern fn request(method: Str, url: Str, headers: Map[Str, Str], body: Str) -> Result[Response, Str] uses net
+
+test "http helpers"
+  expect segments("/todos/7/") == ["todos", "7"]
+  expect segments("/") == []
+  expect error(404, "nope").status == 404
+  expect error(404, "nope").body == "{\"error\":\"nope\"}"
+  expect redirect("/x").headers == {"location": "/x"}
+  let req = Request{
+    method: "GET",
+    path: "/",
+    query: {"page": "2"},
+    headers: {"accept": "text/html"},
+    body: "{\"a\":1}",
+  }
+  expect query_param(req, "page") == Some("2")
+  expect header(req, "Accept") == Some("text/html")
+  expect json_body(req) == Ok(JObj({"a": JNum(1.0)}))
+end test

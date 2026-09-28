@@ -76,6 +76,34 @@ pub extern fn pad_right(text: Str, width: Int, fill: Str) -> Str
 ## Formats a float with a fixed number of decimals.
 pub extern fn fixed(value: Float, decimals: Int) -> Str
 
+## The character at index as a one-character Str, or None if out of range.
+pub extern fn at(text: Str, index: Int) -> Option[Str]
+
+## True if the text is non-empty and every character is a decimal digit.
+pub extern fn is_digit(text: Str) -> Bool
+
+## True if the text is non-empty and every character is a letter.
+pub extern fn is_alpha(text: Str) -> Bool
+
+## True if the text is non-empty and every character is a letter or digit.
+pub extern fn is_alnum(text: Str) -> Bool
+
+## True if the text is non-empty and every character is whitespace.
+pub extern fn is_space(text: Str) -> Bool
+
+pub extern fn is_upper(text: Str) -> Bool
+
+pub extern fn is_lower(text: Str) -> Bool
+
+## The text without the prefix, or None if it does not start with it.
+pub extern fn strip_prefix(text: Str, prefix: Str) -> Option[Str]
+
+## The text without the suffix, or None if it does not end with it.
+pub extern fn strip_suffix(text: Str, suffix: Str) -> Option[Str]
+
+## Splits at the first occurrence of sep: split_once("k=v=w", "=") is Some(Pair{first: "k", second: "v=w"}).
+pub extern fn split_once(text: Str, sep: Str) -> Option[Pair[Str, Str]]
+
 test "str basics"
   expect split("a,b,c", ",") == ["a", "b", "c"]
   expect join(["a", "b"], "-") == "a-b"
@@ -89,4 +117,20 @@ test "str basics"
   expect is_empty("")
   expect fixed(3.14159, 2) == "3.14"
   expect words(" a  b\tc ") == ["a", "b", "c"]
+end test
+
+test "str classification and pairs"
+  expect at("héllo", 1) == Some("é")
+  expect at("abc", 3) == None
+  expect is_digit("0123") and not is_digit("12a") and not is_digit("")
+  expect is_alpha("héllo") and not is_alpha("a1")
+  expect is_alnum("a1") and not is_alnum("a-1")
+  expect is_space(" \t") and not is_space("")
+  expect is_upper("ABC") and not is_upper("Abc")
+  expect is_lower("abc") and not is_lower("aBc")
+  expect strip_prefix("veld.json", "veld") == Some(".json")
+  expect strip_prefix("veld.json", "x") == None
+  expect strip_suffix("veld.json", ".json") == Some("veld")
+  expect split_once("k=v=w", "=") == Some(Pair{first: "k", second: "v=w"})
+  expect split_once("kv", "=") == None
 end test

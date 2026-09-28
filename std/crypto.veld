@@ -1,0 +1,26 @@
+# Hashing and secure randomness. Hashes are returned as lower-case hex.
+
+## SHA-256 of the UTF-8 bytes of text.
+pub extern fn sha256(text: Str) -> Str
+
+pub extern fn sha512(text: Str) -> Str
+
+## HMAC-SHA-256, for signing: hmac_sha256(secret, message).
+pub extern fn hmac_sha256(key: Str, message: Str) -> Str
+
+## A hex string made of `bytes` cryptographically secure random bytes.
+pub extern fn random_hex(bytes: Int) -> Str uses rand
+
+## A random (version 4) UUID such as "3b241101-e2bb-4255-8caf-4136c566a962".
+pub extern fn uuid() -> Str uses rand
+
+## True if a and b are equal, in time that does not depend on where they
+## differ. Use it to compare secrets, tokens and signatures.
+pub extern fn constant_time_equal(a: Str, b: Str) -> Bool
+
+test "crypto"
+  expect sha256("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+  expect hmac_sha256("key", "The quick brown fox jumps over the lazy dog") == "f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8"
+  expect constant_time_equal("a", "a")
+  expect not constant_time_equal("a", "b")
+end test

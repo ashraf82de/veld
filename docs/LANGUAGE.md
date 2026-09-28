@@ -33,8 +33,8 @@ the type it needs and the variables in scope (H001).
    functions, records/sum types, and `list.get`.
 3. Every function signature is fully typed, including `-> Unit`.
 4. Functions declare effects with `uses`: `io`, `fs`, `net`, `env`, `time`,
-   `rand`. Pure functions declare none. A caller must declare every effect of
-   everything it calls.
+   `rand`, `proc`, `state`. Pure functions declare none. A caller must declare
+   every effect of everything it calls.
 5. Calls with 3 or more arguments name every argument after the first:
    `str.replace(s, old: "a", new: "b")`.
 6. Values are immutable. `list.push(xs, 1)` returns a new list; discarding a
@@ -221,27 +221,65 @@ Import with `use std.<name>`. `veld describe std.<name>` lists everything.
 - `io`: print, write, eprint, read_line, read_all (uses io)
 - `str`: len, split, join, lines, words, trim, upper, lower, contains,
   starts_with, ends_with, replace, slice, index_of, count, to_int, to_float,
-  chars, code, from_code, repeat, reverse, pad_left, pad_right, fixed, is_empty
-- `list`: len, is_empty, get, first, last, push, prepend, set_at, remove_at,
-  range, map, map_indexed, filter, fold, flat_map, flatten, find, find_index,
-  any, all, count, contains, index_of, sort, sort_by, reverse, take, drop,
-  slice, unique, repeat, sum, sum_float, max, min, chunks
+  chars, code, from_code, repeat, reverse, pad_left, pad_right, fixed,
+  is_empty, at, is_digit, is_alpha, is_alnum, is_space, is_upper, is_lower,
+  strip_prefix, strip_suffix, split_once
+- `list`: len, is_empty, get, get_or, first, last, push, prepend, set_at,
+  remove_at, range, map, map_indexed, filter, fold, flat_map, flatten, find,
+  find_index, any, all, count, contains, index_of, sort, sort_by, sort_desc,
+  sort_by_desc, reverse, take, drop, take_while, drop_while, slice, unique,
+  repeat, sum, sum_float, max, min, max_by, min_by, chunks, zip, enumerate,
+  partition, group_by
 - `map`: len, is_empty, get, get_or, has, put, remove, keys, values, merge,
-  update
-- `math`: abs, abs_float, min, max, min_float, max_float, clamp, to_float,
-  floor, ceil, round, sqrt, pow, pow_int, log, exp, sin, cos, pi
+  update, entries, from_entries, map_values, filter
+- `math`: abs, abs_float, min, max, min_float, max_float, clamp, sign, gcd,
+  to_float, floor, ceil, round, trunc, sqrt, pow, pow_int, log, log10, exp,
+  sin, cos, tan, asin, acos, atan, atan2, is_nan, pi
 - `option`: is_some, is_none, unwrap_or, map, and_then, ok_or
 - `result`: is_ok, is_err, unwrap_or, map, map_err, and_then, ok
-- `json`: parse, encode, pretty, get, as_str, as_num, as_int, as_bool,
-  as_list, object (values are the prelude type `Json`: JNull, JBool, JNum,
-  JStr, JArr, JObj)
+- `json`: parse, encode, pretty, get, at, as_str, as_num, as_int, as_bool,
+  as_list, object, string, int, number, boolean, array (values are the
+  prelude type `Json`: JNull, JBool, JNum, JStr, JArr, JObj)
+- `regex`: is_match, find, find_all, captures, replace, split. Patterns are
+  RE2; write them as raw strings `"""\d+"""`. Every function returns a Result.
+- `path`: join, base, dir, ext, stem, clean, is_absolute (text only)
+- `encoding`: base64_encode/decode, hex_encode/decode, url_encode/decode
+- `crypto`: sha256, sha512, hmac_sha256, constant_time_equal, random_hex and
+  uuid (uses rand)
+- `csv`: parse, encode
+- `datetime`: iso, parse_iso, parts, from_parts, weekday (pure; timestamps
+  are milliseconds since the epoch, UTC)
 - `fs` (uses fs): read, write, append, exists, list_dir, make_dir, remove
 - `env` (uses env): args, get, exit
 - `time` (uses time): now_ms, sleep_ms
 - `rand` (uses rand): int, float, shuffle
-- `http` (uses net): serve, get, post, text, html, json_response; records
+- `process` (uses proc): run, run_with_input; record
+  `process.Output{status, stdout, stderr}`. No shell is involved.
+- `state` (uses state): get, put, remove, keys, update, incr, save, load.
+  Shared thread-safe storage of Json values, for servers that must remember
+  things between requests (there are no global variables).
+- `http` (uses net): serve, get, post, request, text, html, json_response,
+  error, redirect, segments, query_param, header, json_body; records
   `http.Request{method, path, query, headers, body}` and
   `http.Response{status, headers, body}`
+
+The prelude also has `Pair[A, B]{first, second}`, returned by `list.zip`,
+`list.enumerate`, `list.partition`, `str.split_once` and `map.entries`.
+
+## Performance and memory
+
+Lists and maps are persistent: updates cost O(log n) and share structure with
+the old value, so building a list with `set xs = list.push(xs, x)` in a loop
+is linear. Prefer these idioms:
+
+- `for i in list.range(a, b)` counts without building a list.
+- `set xs = list.set_at(xs, index: i, item: v)` on a local `var` updates in
+  place when nothing else can see the old list.
+- Recursion over `[first, ..rest]` is cheap (`rest` is a view, not a copy),
+  and calls nest up to 100,000 deep.
+- Build big strings with `str.join(parts, "")`, not repeated `+`.
+- `veld run --deny ...` caps what a program may do; there is no other resource
+  limit beyond the call depth.
 
 Common calls:
 
@@ -253,6 +291,17 @@ map.update(m, key: k, default: 0, f: fn(n) => n + 1)
 str.slice(s, start: 0, stop: 3)
 str.pad_left(s, width: 5, fill: "0")
 http.serve(8080, fn(req) => http.text(200, "hello"))
+```
+
+A tiny router, matching on the path segments:
+
+```
+match http.segments(req.path)
+  case [] => http.text(200, "home")
+  case ["todos"] => list_todos()
+  case ["todos", id] => show_todo(id)
+  case _ => http.error(404, "not found")
+end match
 ```
 
 ## Translating habits from other languages

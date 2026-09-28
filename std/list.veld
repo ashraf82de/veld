@@ -1,4 +1,5 @@
 # Immutable lists. Every "update" returns a new list.
+use std.str
 
 ## Number of elements.
 pub extern fn len[T](items: List[T]) -> Int
@@ -156,6 +157,74 @@ pub extern fn min[T](items: List[T]) -> Option[T]
 ## Splits into consecutive chunks of size n (the last may be shorter).
 pub extern fn chunks[T](items: List[T], n: Int) -> List[List[T]]
 
+## The element at index, or fallback if out of range: list.get_or(xs, index: 3, fallback: 0).
+pub fn get_or[T](items: List[T], index: Int, fallback: T) -> T
+  match get(items, index)
+    case Some(v) => v
+    case None => fallback
+  end match
+end fn
+
+## Pairs up elements of two lists; the result is as long as the shorter one.
+pub extern fn zip[A, B](a: List[A], b: List[B]) -> List[Pair[A, B]]
+
+## Pairs each element with its index: enumerate(["a"]) == [Pair{first: 0, second: "a"}].
+pub extern fn enumerate[T](items: List[T]) -> List[Pair[Int, T]]
+
+## Splits into the elements that satisfy pred (first) and those that do not (second), keeping order.
+pub fn partition[T](items: List[T], pred: Fn(T) -> Bool) -> Pair[List[T], List[T]]
+  var yes: List[T] = []
+  var no: List[T] = []
+  for item in items
+    if pred(item)
+      set yes = push(yes, item)
+    else
+      set no = push(no, item)
+    end if
+  end for
+  Pair{first: yes, second: no}
+end fn
+
+## The longest prefix whose elements all satisfy pred.
+pub fn take_while[T](items: List[T], pred: Fn(T) -> Bool) -> List[T]
+  var out: List[T] = []
+  for item in items
+    if not pred(item)
+      break
+    end if
+    set out = push(out, item)
+  end for
+  out
+end fn
+
+## Everything after the longest prefix whose elements all satisfy pred.
+pub fn drop_while[T](items: List[T], pred: Fn(T) -> Bool) -> List[T]
+  var i = 0
+  for item in items
+    if not pred(item)
+      break
+    end if
+    set i = i + 1
+  end for
+  drop(items, i)
+end fn
+
+## Groups elements by a key, keeping first-seen key order and element order:
+## list.group_by(words, key: fn(w) => str.len(w)).
+pub extern fn group_by[T, K](items: List[T], key: Fn(T) -> K) -> Map[K, List[T]]
+
+## The element with the smallest key (the first one on ties), or None if empty.
+pub extern fn min_by[T, K](items: List[T], key: Fn(T) -> K) -> Option[T]
+
+## The element with the largest key (the first one on ties), or None if empty.
+pub extern fn max_by[T, K](items: List[T], key: Fn(T) -> K) -> Option[T]
+
+## Sorts Int, Float or Str elements descending. Stable.
+pub extern fn sort_desc[T](items: List[T]) -> List[T]
+
+## Sorts by a key (Int, Float or Str) descending. Stable.
+pub extern fn sort_by_desc[T, K](items: List[T], key: Fn(T) -> K) -> List[T]
+
 test "list basics"
   let xs = [3, 1, 2]
   expect len(xs) == 3
@@ -177,3 +246,27 @@ test "list basics"
   expect max(xs) == Some(3)
   expect sort_by(["bb", "a"], fn(s) => s) == ["a", "bb"]
 end test
+
+test "list additions"
+  expect get_or([1, 2], index: 5, fallback: 0) == 0
+  expect zip([1, 2, 3], ["a", "b"]) == [Pair{first: 1, second: "a"}, Pair{first: 2, second: "b"}]
+  expect enumerate(["x", "y"]) == [Pair{first: 0, second: "x"}, Pair{first: 1, second: "y"}]
+  let parts = partition([1, 2, 3, 4, 5], fn(n) => n % 2 == 0)
+  expect parts.first == [2, 4] and parts.second == [1, 3, 5]
+  expect take_while([1, 2, 5, 1], fn(n) => n < 3) == [1, 2]
+  expect drop_while([1, 2, 5, 1], fn(n) => n < 3) == [5, 1]
+  expect group_by(["a", "bb", "c", "dd"], key: fn(w) => str_length(w)) == {1: ["a", "c"], 2: ["bb", "dd"]}
+  expect min_by(["ccc", "a", "bb"], key: fn(w) => str_length(w)) == Some("a")
+  expect max_by(["ccc", "a", "bb"], key: fn(w) => str_length(w)) == Some("ccc")
+  expect max_by(["ab", "cd"], key: fn(w) => str_length(w)) == Some("ab")
+  expect sort_desc([2, 3, 1]) == [3, 2, 1]
+  expect sort_by_desc(["b", "a", "c"], key: fn(w) => w) == ["c", "b", "a"]
+end test
+
+fn str_length(text: Str) -> Int
+  len(chars_of(text))
+end fn
+
+fn chars_of(text: Str) -> List[Str]
+  str.chars(text)
+end fn

@@ -25,3 +25,10 @@ end type
 ## Stops the program with an error message. Only for states that cannot happen;
 ## expected failures should return a Result.
 pub extern fn panic[T](message: Str) -> T
+
+## Two values, possibly of different types. Returned by list.zip,
+## list.enumerate, list.partition, str.split_once and map.entries.
+pub record Pair[A, B]
+  first: A
+  second: B
+end record

@@ -1,0 +1,27 @@
+# Text encodings. Strings are UTF-8 text, so decoding fails (Err) when the
+# decoded bytes are not valid UTF-8.
+
+## Standard base64 with padding.
+pub extern fn base64_encode(text: Str) -> Str
+
+pub extern fn base64_decode(text: Str) -> Result[Str, Str]
+
+## Lower-case hexadecimal.
+pub extern fn hex_encode(text: Str) -> Str
+
+pub extern fn hex_decode(text: Str) -> Result[Str, Str]
+
+## Percent-encoding for a URL query component.
+pub extern fn url_encode(text: Str) -> Str
+
+pub extern fn url_decode(text: Str) -> Result[Str, Str]
+
+test "encoding"
+  expect base64_encode("hello, veld") == "aGVsbG8sIHZlbGQ="
+  expect base64_decode("aGVsbG8sIHZlbGQ=") == Ok("hello, veld")
+  expect base64_decode("!!") != Ok("")
+  expect hex_encode("Az") == "417a"
+  expect hex_decode("417a") == Ok("Az")
+  expect url_encode("a b&c=d/é") == "a+b%26c%3Dd%2F%C3%A9"
+  expect url_decode("a+b%26c") == Ok("a b&c")
+end test

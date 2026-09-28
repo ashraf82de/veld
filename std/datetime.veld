@@ -1,0 +1,44 @@
+# Dates and times without a clock: everything here is a pure function of the
+# timestamps you pass in (milliseconds since the Unix epoch, UTC). Get the
+# current time from std.time.
+
+## A calendar time in UTC.
+pub record Parts
+  year: Int
+  month: Int
+  day: Int
+  hour: Int
+  minute: Int
+  second: Int
+end record
+
+## RFC 3339 text in UTC: iso(0) == "1970-01-01T00:00:00Z".
+pub extern fn iso(ms: Int) -> Str
+
+## Parses RFC 3339 text (with any zone offset) into milliseconds.
+pub extern fn parse_iso(text: Str) -> Option[Int]
+
+## The calendar time of a timestamp.
+pub extern fn parts(ms: Int) -> Parts
+
+## The timestamp of a calendar time in UTC. Out-of-range fields roll over
+## (month 13 is January of the next year, day 0 is the last day of the
+## previous month).
+pub extern fn from_parts(time: Parts) -> Int
+
+## The day of the week: 0 = Sunday ... 6 = Saturday.
+pub extern fn weekday(ms: Int) -> Int
+
+test "datetime"
+  expect iso(0) == "1970-01-01T00:00:00Z"
+  expect iso(1700000000000) == "2023-11-14T22:13:20Z"
+  expect parse_iso("2023-11-14T22:13:20Z") == Some(1700000000000)
+  expect parse_iso("2023-11-14T23:13:20+01:00") == Some(1700000000000)
+  expect parse_iso("nope") == None
+  let p = parts(1700000000000)
+  expect p == Parts{year: 2023, month: 11, day: 14, hour: 22, minute: 13, second: 20}
+  expect weekday(1700000000000) == 2
+  expect from_parts(p) == 1700000000000
+  let next_year = from_parts(Parts{..p, month: 13})
+  expect parts(next_year).year == 2024 and parts(next_year).month == 1
+end test

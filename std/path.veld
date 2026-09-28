@@ -1,0 +1,43 @@
+# File paths as text. Always uses "/" as the separator, which every platform
+# accepts; nothing here touches the file system (see std.fs for that).
+use std.str
+
+## Joins parts with "/" and cleans the result: join(["a", "b/", "../c"]) == "a/c".
+pub extern fn join(parts: List[Str]) -> Str
+
+## The last element: base("a/b.txt") == "b.txt".
+pub extern fn base(path: Str) -> Str
+
+## Everything but the last element: dir("a/b.txt") == "a".
+pub extern fn dir(path: Str) -> Str
+
+## The extension including the dot, or "": ext("a/b.txt") == ".txt".
+pub extern fn ext(path: Str) -> Str
+
+## The base name without its extension: stem("a/b.txt") == "b".
+pub fn stem(path: Str) -> Str
+  let name = base(path)
+  let e = ext(name)
+  if e == ""
+    name
+  else
+    str.slice(name, start: 0, stop: str.len(name) - str.len(e))
+  end if
+end fn
+
+## Removes ".", duplicate separators and resolvable "..": clean("a//b/../c") == "a/c".
+pub extern fn clean(path: Str) -> Str
+
+pub extern fn is_absolute(path: Str) -> Bool
+
+test "path"
+  expect join(["a", "b/", "../c"]) == "a/c"
+  expect base("a/b.txt") == "b.txt"
+  expect dir("a/b.txt") == "a"
+  expect ext("a/b.tar.gz") == ".gz"
+  expect stem("a/b.tar.gz") == "b.tar"
+  expect stem("a/README") == "README"
+  expect clean("a//b/../c/") == "a/c"
+  expect is_absolute("/etc")
+  expect not is_absolute("etc")
+end test

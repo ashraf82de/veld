@@ -264,10 +264,14 @@ func Compare(a, b Value) int {
 	return 0
 }
 
-func sortValues(xs List, key func(Value) Value) List {
+func sortValues(xs List, key func(Value) Value, desc bool) List {
 	out := xs.ToSlice()
+	sign := 1
+	if desc {
+		sign = -1
+	}
 	if key == nil {
-		sort.SliceStable(out, func(i, j int) bool { return Compare(out[i], out[j]) < 0 })
+		sort.SliceStable(out, func(i, j int) bool { return sign*Compare(out[i], out[j]) < 0 })
 		return NewList(out)
 	}
 	keys := make([]Value, len(out))
@@ -278,7 +282,7 @@ func sortValues(xs List, key func(Value) Value) List {
 	for i := range idx {
 		idx[i] = i
 	}
-	sort.SliceStable(idx, func(i, j int) bool { return Compare(keys[idx[i]], keys[idx[j]]) < 0 })
+	sort.SliceStable(idx, func(i, j int) bool { return sign*Compare(keys[idx[i]], keys[idx[j]]) < 0 })
 	res := make([]Value, len(out))
 	for i, k := range idx {
 		res[i] = out[k]

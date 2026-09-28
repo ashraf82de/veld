@@ -39,6 +39,38 @@ pub fn update[K, V](m: Map[K, V], key: K, default: V, f: Fn(V) -> V) -> Map[K, V
   put(m, key: key, value: f(get_or(m, key: key, default: default)))
 end fn
 
+## The entries as pairs, in insertion order.
+pub extern fn entries[K, V](m: Map[K, V]) -> List[Pair[K, V]]
+
+## Builds a map from pairs; a later pair replaces an earlier one with the same key.
+pub fn from_entries[K, V](items: List[Pair[K, V]]) -> Map[K, V]
+  var out: Map[K, V] = {}
+  for item in items
+    set out = put(out, key: item.first, value: item.second)
+  end for
+  out
+end fn
+
+## A new map with f applied to every value.
+pub fn map_values[K, V, W](m: Map[K, V], f: Fn(V) -> W) -> Map[K, W]
+  var out: Map[K, W] = {}
+  for e in entries(m)
+    set out = put(out, key: e.first, value: f(e.second))
+  end for
+  out
+end fn
+
+## A new map with only the entries for which keep(key, value) is true.
+pub fn filter[K, V](m: Map[K, V], keep: Fn(K, V) -> Bool) -> Map[K, V]
+  var out: Map[K, V] = {}
+  for e in entries(m)
+    if keep(e.first, e.second)
+      set out = put(out, key: e.first, value: e.second)
+    end if
+  end for
+  out
+end fn
+
 test "map basics"
   let m: Map[Str, Int] = {"a": 1}
   let m2 = put(m, key: "b", value: 2)
@@ -48,4 +80,12 @@ test "map basics"
   expect get_or(m2, key: "z", default: 0) == 0
   expect update(m2, key: "a", default: 0, f: fn(n) => n + 10) == {"a": 11, "b": 2}
   expect len(remove(m2, "a")) == 1
+end test
+
+test "map additions"
+  let m: Map[Str, Int] = {"a": 1, "b": 2, "c": 3}
+  expect entries(m) == [Pair{first: "a", second: 1}, Pair{first: "b", second: 2}, Pair{first: "c", second: 3}]
+  expect from_entries(entries(m)) == m
+  expect map_values(m, fn(n) => n * 10) == {"a": 10, "b": 20, "c": 30}
+  expect filter(m, fn(k, v) => v != 2) == {"a": 1, "c": 3}
 end test

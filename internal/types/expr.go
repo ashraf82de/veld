@@ -6,6 +6,7 @@ import (
 
 	"github.com/ashraf82de/veld/internal/diag"
 	"github.com/ashraf82de/veld/internal/syntax"
+	"github.com/ashraf82de/veld/std"
 )
 
 var foreignHints = map[string]string{
@@ -16,8 +17,8 @@ var foreignHints = map[string]string{
 	"map": "list.map(xs, f)", "filter": "list.filter(xs, f)", "reduce": "list.fold(xs, init, f)", "sorted": "list.sort(xs)",
 	"sum": "list.sum(xs)", "abs": "math.abs(x)", "min": "math.min(a, b)", "max": "math.max(a, b)",
 	"input": "io.read_line()", "open": "fs.read(path)", "null": "None", "nil": "None", "assert": "`expect` inside a test",
-	"append": "list.push(xs, x)", "push": "list.push(xs, x)", "enumerate": "list.range(0, list.len(xs))",
-	"zip": "list.range + list.get", "join": "str.join(parts, sep)", "split": "str.split(s, sep)",
+	"append": "list.push(xs, x)", "push": "list.push(xs, x)", "enumerate": "list.enumerate(xs)",
+	"zip": "list.zip(a, b)", "join": "str.join(parts, sep)", "split": "str.split(s, sep)",
 	"exit": "env.exit(code)", "sqrt": "math.sqrt(x)", "floor": "math.floor(x)", "round": "math.round(x)",
 	"unwrap": "option.unwrap_or(x, default) or `?`", "throw": "return Err(...)", "raise": "return Err(...)",
 }
@@ -254,8 +255,18 @@ func (c *Checker) unknownModule(name string, sp diag.Span) {
 	}
 }
 
-var stdModules = map[string]bool{"io": true, "str": true, "list": true, "map": true, "math": true, "fs": true,
-	"env": true, "time": true, "rand": true, "json": true, "http": true, "option": true, "result": true}
+// stdModules lists the embedded standard library modules, so that a missing
+// `use` gets an "import it" fix for every one of them.
+var stdModules = func() map[string]bool {
+	out := map[string]bool{}
+	entries, _ := std.FS.ReadDir(".")
+	for _, e := range entries {
+		if name, ok := strings.CutSuffix(e.Name(), ".veld"); ok && name != "prelude" {
+			out[name] = true
+		}
+	}
+	return out
+}()
 
 func (c *Checker) unknownName(name string, sp diag.Span) {
 	d := c.errf("E205", sp, "unknown name `%s`", name)
@@ -650,11 +661,11 @@ func paramName(cl *callee, i int) string {
 func (c *Checker) checkSpecialConstraints(cl *callee, call *syntax.CallExpr) {
 	var t Type
 	switch cl.name {
-	case "list.sort", "list.max", "list.min":
+	case "list.sort", "list.sort_desc", "list.max", "list.min":
 		if l, ok := Prune(cl.typ.Params[0]).(*TCon); ok && len(l.Args) == 1 {
 			t = l.Args[0]
 		}
-	case "list.sort_by":
+	case "list.sort_by", "list.sort_by_desc", "list.min_by", "list.max_by":
 		if f, ok := Prune(cl.typ.Params[1]).(*TFn); ok {
 			t = f.Ret
 		}

@@ -1,0 +1,23 @@
+# Running other programs. Needs the `proc` effect, which `veld run --deny proc`
+# forbids. Commands run without a shell, so arguments are never re-interpreted.
+
+pub record Output
+  status: Int
+  stdout: Str
+  stderr: Str
+end record
+
+## Runs program with args and waits for it (at most 60 seconds). A non-zero
+## exit status is not an error: check `status`. Err means it could not start.
+pub extern fn run(program: Str, args: List[Str]) -> Result[Output, Str] uses proc
+
+## Like run, feeding `input` to the program's standard input.
+pub extern fn run_with_input(program: Str, args: List[Str], input: Str) -> Result[Output, Str] uses proc
+
+test "process"
+  match run("go", ["version"])
+    case Ok(out) => expect out.status == 0 and out.stdout != ""
+    case Err(e) => expect e == ""
+  end match
+  expect run("definitely-not-a-real-program", []) != Ok(Output{status: 0, stdout: "", stderr: ""})
+end test

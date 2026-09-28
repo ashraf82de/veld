@@ -58,6 +58,38 @@ pub fn object(fields: Map[Str, Json]) -> Json
   JObj(fields)
 end fn
 
+pub fn string(value: Str) -> Json
+  JStr(value)
+end fn
+
+pub fn int(value: Int) -> Json
+  JNum(math.to_float(value))
+end fn
+
+pub fn number(value: Float) -> Json
+  JNum(value)
+end fn
+
+pub fn boolean(value: Bool) -> Json
+  JBool(value)
+end fn
+
+pub fn array(items: List[Json]) -> Json
+  JArr(items)
+end fn
+
+## The value at a path of object keys: json.at(doc, ["user", "name"]).
+pub fn at(value: Json, path: List[Str]) -> Option[Json]
+  match path
+    case [] => Some(value)
+    case [key, ..rest]
+      match get(value, key)
+        case Some(inner) => at(inner, rest)
+        case None => None
+      end match
+  end match
+end fn
+
 test "json round trip"
   let text = """{"name":"veld","tags":["a","b"],"n":2,"ok":true,"x":null}"""
   match parse(text)
@@ -76,3 +108,11 @@ fn option_unwrap(o: Option[Json]) -> Json
     case None => JNull
   end match
 end fn
+
+test "json builders and paths"
+  let doc = object({"user": object({"name": string("ada"), "age": int(36)}), "tags": array([boolean(true)])})
+  expect encode(doc) == "{\"user\":{\"name\":\"ada\",\"age\":36},\"tags\":[true]}"
+  expect at(doc, ["user", "name"]) == Some(JStr("ada"))
+  expect at(doc, ["user", "nope"]) == None
+  expect at(doc, []) == Some(doc)
+end test

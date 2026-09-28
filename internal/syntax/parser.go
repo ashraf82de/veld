@@ -9,7 +9,7 @@ import (
 )
 
 // Effects is the fixed set of effect names a function may declare.
-var Effects = []string{"io", "fs", "net", "env", "time", "rand"}
+var Effects = []string{"io", "fs", "net", "env", "time", "rand", "proc", "state"}
 
 func IsEffect(s string) bool {
 	for _, e := range Effects {

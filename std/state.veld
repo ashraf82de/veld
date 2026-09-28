@@ -1,0 +1,43 @@
+# Shared, thread-safe state for servers and other long-running programs.
+#
+# Veld has no global variables, and HTTP handlers run concurrently, so a server
+# that must remember anything between requests keeps it here. Values are Json.
+# Needs the `state` effect (`veld run --deny state` forbids it).
+
+## The value stored under key, or None.
+pub extern fn get(key: Str) -> Option[Json] uses state
+
+pub extern fn put(key: Str, value: Json) -> Unit uses state
+
+pub extern fn remove(key: Str) -> Unit uses state
+
+## All keys, in the order they were first set.
+pub extern fn keys() -> List[Str] uses state
+
+## Atomically replaces the value under key with f(old value) and returns the
+## new value. Concurrent updates are retried, so f may run more than once and
+## must be pure.
+pub extern fn update(key: Str, f: Fn(Option[Json]) -> Json) -> Json uses state
+
+## Atomically adds `by` to the number under key (starting from 0) and returns
+## the new value.
+pub extern fn incr(key: Str, by: Int) -> Int uses state
+
+## Writes the whole store to a JSON file.
+pub extern fn save(path: Str) -> Result[Unit, Str] uses state, fs
+
+## Replaces the whole store with the contents of a file written by save.
+pub extern fn load(path: Str) -> Result[Unit, Str] uses state, fs
+
+test "state"
+  remove("t.a")
+  expect get("t.a") == None
+  put("t.a", JNum(1.0))
+  expect get("t.a") == Some(JNum(1.0))
+  expect incr("t.n", 5) == 5
+  expect incr("t.n", -2) == 3
+  expect update("t.a", fn(old) => JStr("changed")) == JStr("changed")
+  expect get("t.a") == Some(JStr("changed"))
+  remove("t.a")
+  expect get("t.a") == None
+end test

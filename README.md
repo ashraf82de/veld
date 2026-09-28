@@ -53,7 +53,7 @@ end test
 | Argument order mistakes               | Calls with 3+ arguments must name them                                  |
 | "Mutating" immutable values           | Discarded results are a compile error with a `set x = ...` hint         |
 | Unhandled cases                       | Exhaustive `match`, with the missing case and a fix that inserts it     |
-| Unsafe side effects                   | Effects (`io fs net env time rand`) in signatures; enforced again at runtime |
+| Unsafe side effects                   | Effects (`io fs net env time rand proc state`) in signatures; enforced again at runtime |
 | Guessing what to write next           | Typed holes: `???` reports the needed type and variables in scope       |
 | Unverifiable output                   | Tests and `requires`/`ensures` contracts live next to the code          |
 | Prose error messages                  | `--json` diagnostics: stable codes, spans, fixes; `veld fix` applies them |

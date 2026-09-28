@@ -46,7 +46,7 @@ wrong choices and more consistent training signal as the corpus grows.
   effects). A model reading one function never needs another function's body.
 - Locals are inferred (unification), because annotating them adds tokens
   without adding information.
-- **Effects** (`io fs net env time rand`) are part of the signature and
+- **Effects** (`io fs net env time rand proc state`) are part of the signature and
   propagate to callers. An agent (or a reviewer of agent code) can see from
   the signature alone whether a function touches the network. Higher-order
   functions are effect-polymorphic in their function parameters. The runtime

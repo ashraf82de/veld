@@ -381,3 +381,28 @@ end fn
 		t.Errorf("lost updates: counter = %v, want %d", got, workers*rounds+1)
 	}
 }
+
+// TestDatasetInSync keeps huggingface/veld-evals.jsonl (the published dataset)
+// in step with evals/tasks: regenerate it with
+// `veld eval export evals/tasks > huggingface/veld-evals.jsonl`.
+func TestDatasetInSync(t *testing.T) {
+	dirs, _ := filepath.Glob("../evals/tasks/*")
+	data, err := os.ReadFile("../huggingface/veld-evals.jsonl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	if len(lines) != len(dirs) {
+		t.Fatalf("dataset has %d tasks, evals/tasks has %d: regenerate huggingface/veld-evals.jsonl", len(lines), len(dirs))
+	}
+	for i, d := range dirs {
+		if !strings.Contains(lines[i], `"task_id":"`+filepath.Base(d)+`"`) {
+			t.Errorf("dataset line %d is not task %s: regenerate huggingface/veld-evals.jsonl", i+1, filepath.Base(d))
+		}
+		ref, _ := os.ReadFile(filepath.Join(d, "reference.veld"))
+		want := strings.ReplaceAll(strings.TrimSpace(string(ref)), "\r\n", "\n")
+		if !strings.Contains(lines[i], "reference") || want == "" {
+			t.Errorf("dataset line %d lacks a reference", i+1)
+		}
+	}
+}

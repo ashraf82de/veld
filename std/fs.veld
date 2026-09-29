@@ -1,4 +1,5 @@
 # Files. Every function needs the `fs` effect.
+use std.str
 
 pub extern fn read(path: Str) -> Result[Str, Str] uses fs
 
@@ -16,3 +17,32 @@ pub extern fn list_dir(path: Str) -> Result[List[Str], Str] uses fs
 pub extern fn make_dir(path: Str) -> Result[Unit, Str] uses fs
 
 pub extern fn remove(path: Str) -> Result[Unit, Str] uses fs
+
+pub extern fn is_dir(path: Str) -> Bool uses fs
+
+## Moves or renames a file or directory.
+pub extern fn rename(from: Str, to: Str) -> Result[Unit, Str] uses fs
+
+## Copies a file's contents to a new path.
+pub extern fn copy(from: Str, to: Str) -> Result[Unit, Str] uses fs
+
+## The lines of a text file (\n and \r\n accepted, no trailing empty line).
+pub fn read_lines(path: Str) -> Result[List[Str], Str] uses fs
+  let text = read(path)?
+  Ok(str.lines(text))
+end fn
+
+test "fs"
+  let dir = "veld_fs_test_dir"
+  expect make_dir(dir) == Ok(Unit)
+  expect is_dir(dir)
+  expect write("${dir}/a.txt", "one\ntwo\n") == Ok(Unit)
+  expect read_lines("${dir}/a.txt") == Ok(["one", "two"])
+  expect copy("${dir}/a.txt", "${dir}/b.txt") == Ok(Unit)
+  expect rename("${dir}/b.txt", "${dir}/c.txt") == Ok(Unit)
+  expect list_dir(dir) == Ok(["a.txt", "c.txt"])
+  expect remove("${dir}/a.txt") == Ok(Unit)
+  expect remove("${dir}/c.txt") == Ok(Unit)
+  expect remove(dir) == Ok(Unit)
+  expect not exists(dir)
+end test

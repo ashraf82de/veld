@@ -100,6 +100,34 @@ func (s *store) del(key string) {
 var globalStore store
 
 func registerExt(def func(name string, f func(th *Thread, a []Value) Value)) {
+	def("fs.is_dir", func(th *Thread, a []Value) Value {
+		st, err := os.Stat(a[0].(string))
+		return err == nil && st.IsDir()
+	})
+	def("fs.rename", func(th *Thread, a []Value) Value {
+		if err := os.Rename(a[0].(string), a[1].(string)); err != nil {
+			return th.in.err(err.Error())
+		}
+		return th.in.ok(Unit)
+	})
+	def("fs.copy", func(th *Thread, a []Value) Value {
+		b, err := os.ReadFile(a[0].(string))
+		if err != nil {
+			return th.in.err(err.Error())
+		}
+		if err := os.WriteFile(a[1].(string), b, 0o644); err != nil {
+			return th.in.err(err.Error())
+		}
+		return th.in.ok(Unit)
+	})
+	def("env.cwd", func(th *Thread, a []Value) Value {
+		d, err := os.Getwd()
+		if err != nil {
+			th.nativeFail("env.cwd: %v", err)
+		}
+		return d
+	})
+
 	// ---- str ----
 	def("str.at", func(th *Thread, a []Value) Value {
 		s, i := a[0].(string), a[1].(int64)

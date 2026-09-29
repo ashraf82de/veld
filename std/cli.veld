@@ -1,0 +1,69 @@
+# Command-line arguments. Pair with env.args(): cli.parse(env.args()).
+use std.list
+use std.map
+use std.str
+
+## The result of parse: named flags and the remaining positional arguments.
+pub record Parsed
+  flags: Map[Str, Str]
+  positional: List[Str]
+end record
+
+## Splits arguments into flags and positional arguments.
+## `--name=value` (or `-name=value`) sets a flag to value; `--name` alone sets it
+## to "true". A flag never takes the next argument as its value, so
+## `--out file` is the flag `out` = "true" and a positional `file`; write
+## `--out=file`. Negative numbers are positional. `--` ends flag parsing.
+pub fn parse(args: List[Str]) -> Parsed
+  var flags: Map[Str, Str] = {}
+  var positional: List[Str] = []
+  var flags_done = false
+  for arg in args
+    if flags_done
+      set positional = list.push(positional, arg)
+    else if arg == "--"
+      set flags_done = true
+    else if is_flag(arg)
+      let body = strip_dashes(arg)
+      match str.split_once(body, "=")
+        case Some(p) => set flags = map.put(flags, key: p.first, value: p.second)
+        case None => set flags = map.put(flags, key: body, value: "true")
+      end match
+    else
+      set positional = list.push(positional, arg)
+    end if
+  end for
+  Parsed{flags: flags, positional: positional}
+end fn
+
+fn is_flag(arg: Str) -> Bool
+  str.starts_with(arg, "-") and str.len(arg) > 1 and str.to_float(arg) == None
+end fn
+
+fn strip_dashes(arg: Str) -> Str
+  match str.strip_prefix(arg, "--")
+    case Some(rest) => rest
+    case None => str.slice(arg, start: 1, stop: str.len(arg))
+  end match
+end fn
+
+## The value of a flag, or None if it was not given.
+pub fn flag(parsed: Parsed, name: Str) -> Option[Str]
+  map.get(parsed.flags, name)
+end fn
+
+## True if the flag was given, with or without a value.
+pub fn has(parsed: Parsed, name: Str) -> Bool
+  map.has(parsed.flags, name)
+end fn
+
+test "cli"
+  let p = parse(["build", "--release", "--out=dist", "-v", "--", "--not-a-flag", "x"])
+  expect p.positional == ["build", "--not-a-flag", "x"]
+  expect flag(p, "out") == Some("dist")
+  expect flag(p, "release") == Some("true")
+  expect has(p, "v") and not has(p, "quiet")
+  expect parse(["-5", "a=b"]).positional == ["-5", "a=b"]
+  expect flag(parse(["--name=a=b"]), "name") == Some("a=b")
+  expect parse([]).positional == []
+end test

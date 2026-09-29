@@ -26,6 +26,8 @@ change lists how to migrate (`veld fix` carries the migration where possible).
   clean `R501` error.
 
 ### Added
+- `std.cli` (argument parsing), `fs.read_lines`/`is_dir`/`rename`/`copy`,
+  `io.read_lines`, `env.cwd`.
 - Feedback and outreach: `veld report --feedback` / `--url` print a prefilled GitHub
   issue link; `veld eval export` writes the eval tasks as JSON lines;
   `llms.txt`, `docs/FOR_AGENTS.md`, a Hugging Face dataset card

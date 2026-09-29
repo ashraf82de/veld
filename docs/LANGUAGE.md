@@ -230,7 +230,7 @@ end fn
 
 Import with `use std.<name>`. `veld describe std.<name>` lists everything.
 
-- `io`: print, write, eprint, read_line, read_all (uses io)
+- `io`: print, write, eprint, read_line, read_all, read_lines (uses io)
 - `str`: len, split, join, lines, words, trim, upper, lower, contains,
   starts_with, ends_with, replace, slice, index_of, count, to_int, to_float,
   chars, code, from_code, repeat, reverse, pad_left, pad_right, fixed,
@@ -263,8 +263,11 @@ Import with `use std.<name>`. `veld describe std.<name>` lists everything.
   are milliseconds since the epoch, UTC)
 - `task`: parallel_map (runs a pure function over a list on all cores; the
   function must not capture a `var`)
-- `fs` (uses fs): read, write, append, exists, list_dir, make_dir, remove
-- `env` (uses env): args, get, exit
+- `fs` (uses fs): read, read_lines, write, append, exists, is_dir, list_dir,
+  make_dir, remove, rename, copy
+- `env` (uses env): args, get, cwd, exit
+- `cli`: parse(env.args()) gives `Parsed{flags, positional}` for `--name=value`
+  and bare `--flag` (a flag never consumes the next argument); flag, has
 - `time` (uses time): now_ms, sleep_ms
 - `rand` (uses rand): int, float, shuffle
 - `process` (uses proc): run, run_with_input; record

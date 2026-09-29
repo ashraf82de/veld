@@ -26,6 +26,9 @@ change lists how to migrate (`veld fix` carries the migration where possible).
   clean `R501` error.
 
 ### Added
+- `set s = s + a + b` on a local `var` appends into a buffer instead of copying,
+  so building a string in a loop is linear (60,000 appends: 3.1s to 0.27s).
+  Reads still see immutable strings.
 - Tail calls: a call to a user function in tail position (last expression of a
   function, inside if/match branches, or `return f(x)`) reuses the caller's
   frame, so tail-recursive loops and mutual recursion run in constant stack.

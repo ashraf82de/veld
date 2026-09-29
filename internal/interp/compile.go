@@ -20,7 +20,10 @@ type varInfo struct {
 	// owned marks a list `var` that is updated in place: its vector is held by
 	// this slot alone until some read might let it escape (see inplace).
 	owned bool
-	decl  *syntax.LetStmt
+	// strOwned marks a Str `var` built with `set s = s + ...`; its slot holds a
+	// string or a *strBuf (see compile_strbuf.go).
+	strOwned bool
+	decl     *syntax.LetStmt
 }
 
 // fnScope is the compile-time view of one function or lambda body.
@@ -63,6 +66,7 @@ type compiler struct {
 	fs       *fnScope
 	boxed    map[*syntax.LetStmt]bool
 	owned    map[*syntax.LetStmt]bool
+	strOwned map[*syntax.LetStmt]bool
 	noFreeze map[*syntax.Ident]bool
 	// tailOK says calls in tail position may reuse the caller's Go frame; it is
 	// false for functions with `ensures`, which must run after the body.
@@ -112,6 +116,7 @@ func (c *compiler) declare(name string, mutable bool, decl *syntax.LetStmt) *var
 		v.boxed = true
 	}
 	v.owned = decl != nil && decl.Mutable && c.owned[decl] && !v.boxed
+	v.strOwned = decl != nil && decl.Mutable && c.strOwned[decl] && !v.boxed
 	if name != "_" && name != "" {
 		c.fs.blocks[len(c.fs.blocks)-1][name] = v
 	}
@@ -151,8 +156,9 @@ func (in *Interp) compileProgram() {
 func (in *Interp) withBoxing(mod *types.Module, build func(c *compiler)) {
 	boxed := map[*syntax.LetStmt]bool{}
 	owned := map[*syntax.LetStmt]bool{}
+	strOwned := map[*syntax.LetStmt]bool{}
 	for pass := 0; pass < 6; pass++ {
-		c := &compiler{in: in, mod: mod, boxed: boxed, owned: owned, noFreeze: map[*syntax.Ident]bool{}, tailNodes: map[syntax.Expr]bool{},
+		c := &compiler{in: in, mod: mod, boxed: boxed, owned: owned, strOwned: strOwned, noFreeze: map[*syntax.Ident]bool{}, tailNodes: map[syntax.Expr]bool{},
 			override: map[syntax.Expr]code{}, exits: map[syntax.Node]int{}}
 		build(c)
 		if !c.grew {
@@ -435,6 +441,9 @@ func (c *compiler) stmt(s syntax.Stmt) code {
 		return func(f *frame) Value { f.slots[slot] = val(f); return Unit }
 	case *syntax.SetStmt:
 		if run, ok := c.inplace(s); ok {
+			return run
+		}
+		if run, ok := c.inplaceStr(s); ok {
 			return run
 		}
 		val := c.expr(s.Value)

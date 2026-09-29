@@ -292,7 +292,9 @@ is linear. Prefer these idioms:
   `return f(x)`) uses no stack, so tail-recursive loops can run forever;
   other calls nest up to 100,000 deep. Functions with `ensures` are not
   tail-call optimized.
-- Build big strings with `str.join(parts, "")`, not repeated `+`.
+- `set s = s + text` on a local `var` appends in place, so building a string in
+  a loop is linear (only that form: `s = f(s) + x` or `t = s + x` copy). For
+  pieces you already have as a list, `str.join(parts, "")` is the same cost.
 - `veld run --deny ...` caps what a program may do; there is no other resource
   limit beyond the call depth.
 

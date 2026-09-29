@@ -1,0 +1,70 @@
+## Text is a value: building a string with `set s = s + ...` never changes any
+## string that was read earlier.
+fn snapshot() -> Bool
+  var s = "ab"
+  set s = s + "c"
+  let before = s
+  set s = s + "d" + "e"
+  let mid = s
+  set s = s + "f"
+  before == "abc" and mid == "abcde" and s == "abcdef"
+end fn
+
+fn self_append() -> Str
+  var s = "x"
+  set s = s + s
+  set s = s + s + s
+  s
+end fn
+
+fn reassign() -> Str
+  var s = "abc"
+  set s = s + "d"
+  set s = "reset"
+  set s = s + "!"
+  s
+end fn
+
+fn pass_through(t: Str) -> Str
+  t + "?"
+end fn
+
+fn read_in_loop() -> Bool
+  var s = ""
+  var ok = true
+  for i in [1, 2, 3, 4, 5]
+    set s = s + "${i}"
+    let copy = pass_through(s)
+    set ok = ok and copy == s + "?"
+  end for
+  ok and s == "12345"
+end fn
+
+fn collected() -> List[Str]
+  var s = ""
+  var seen: List[Str] = []
+  for c in ["a", "b", "c"]
+    set s = s + c
+    set seen = list_push(seen, s)
+  end for
+  seen
+end fn
+
+fn list_push(xs: List[Str], x: Str) -> List[Str]
+  xs + [x]
+end fn
+
+fn unicode() -> Bool
+  var s = "é"
+  set s = s + "ü" + "日本"
+  s == "éü日本"
+end fn
+
+test "string accumulators keep value semantics"
+  expect snapshot()
+  expect self_append() == "xxxxxx"
+  expect reassign() == "reset!"
+  expect read_in_loop()
+  expect collected() == ["a", "ab", "abc"]
+  expect unicode()
+end test

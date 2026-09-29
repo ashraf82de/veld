@@ -276,6 +276,14 @@ func (c *compiler) ident(e *syntax.Ident) code {
 		if v.boxed {
 			return func(f *frame) Value { return f.slots[s].(*Box).v }
 		}
+		if v.strOwned {
+			return func(f *frame) Value {
+				if b, ok := f.slots[s].(*strBuf); ok {
+					return b.str()
+				}
+				return f.slots[s]
+			}
+		}
 		if v.owned && !c.noFreeze[e] {
 			// Any read that is not known to keep the list to itself may let
 			// it escape, so the variable gives up exclusive ownership.

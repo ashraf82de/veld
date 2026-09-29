@@ -1,0 +1,20 @@
+use std.io
+use std.list
+use std.str
+
+fn build(n: Int) -> Str
+  var out = ""
+  for i in list.range(0, n)
+    set out = out + "line ${i}\n"
+  end for
+  out
+end fn
+
+fn main() -> Unit uses io
+  let text = build(60000)
+  io.print("length: ${str.len(text)}")
+end fn
+
+test "build"
+  expect build(3) == "line 0\nline 1\nline 2\n"
+end test

@@ -23,8 +23,6 @@ codes and failed tasks in `veld eval --json`, and issues labelled
 - [ ] Bytecode or register VM behind the closure compiler for tight numeric
       loops (the closure compiler stays the reference).
 - [ ] Unboxed Int/Float slots in frames.
-- [ ] String builders with the same ownership rule as lists, so `s = s + x` in
-      a loop is linear.
 - [ ] Resource limits: `veld run --max-memory`, `--max-steps`.
 
 ## Ecosystem
@@ -36,7 +34,7 @@ codes and failed tasks in `veld eval --json`, and issues labelled
 - [ ] Stability guarantee for syntax and diagnostic codes.
 
 ## Done
-- v0.2 (in progress, see CHANGELOG.md): tail calls; closure-compiling runtime with slot
+- v0.2 (in progress, see CHANGELOG.md): tail calls; linear string building; closure-compiling runtime with slot
   variables and unboxed arithmetic; persistent List/Map (`internal/pds`) with
   O(1) slices and in-place updates for provably unshared lists; call depth
   100k; multi-value `match a, b` (RFC 0001); effects `proc` and `state`;

@@ -290,8 +290,9 @@ the old value, so building a list with `set xs = list.push(xs, x)` in a loop
 is linear. Prefer these idioms:
 
 - `for i in list.range(a, b)` counts without building a list.
-- `set xs = list.set_at(xs, index: i, item: v)` on a local `var` updates in
-  place when nothing else can see the old list.
+- `set xs = list.set_at(xs, index: i, item: v)`, `set m = map.put(m, key: k,
+  value: v)` and `map.remove` / `map.update` on a local `var` update in place
+  when nothing else can see the old list or map.
 - Recursion over `[first, ..rest]` is cheap (`rest` is a view, not a copy).
   A call in tail position (`if n == 0 ... else loop(n - 1, acc + 1)`, or
   `return f(x)`) uses no stack, so tail-recursive loops can run forever;

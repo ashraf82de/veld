@@ -26,6 +26,9 @@ change lists how to migrate (`veld fix` carries the migration where possible).
   clean `R501` error.
 
 ### Added
+- In-place map updates: `set m = map.put(m, ...)`, `map.remove` and `map.update`
+  on a local `var` mutate the map while it is provably unshared (same freeze
+  rule as lists). 300k word-count updates: 0.33s to 0.19s.
 - `std.cli` (argument parsing), `fs.read_lines`/`is_dir`/`rename`/`copy`,
   `io.read_lines`, `env.cwd`.
 - Feedback and outreach: `veld report --feedback` / `--url` print a prefilled GitHub

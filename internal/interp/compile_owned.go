@@ -29,6 +29,9 @@ var keepsArg = map[string]bool{
 	"list.filter": true, "list.fold": true, "list.reverse": true, "list.sort": true,
 	"list.sort_by": true, "list.max": true, "list.min": true, "list.sum": true,
 	"list.sum_float": true, "list.unique": true, "str.join": true,
+	"map.len": true, "map.get": true, "map.get_or": true, "map.has": true,
+	"map.is_empty": true, "map.keys": true, "map.values": true, "map.entries": true,
+	"map.map_values": true, "map.filter": true,
 }
 
 // markNoFreeze records that the first argument of a call to a function in
@@ -84,7 +87,9 @@ func (c *compiler) inplace(s *syntax.SetStmt) (code, bool) {
 		return nil, false
 	}
 	name := fi.QualName()
-	if name != "list.push" && name != "list.set_at" {
+	switch name {
+	case "list.push", "list.set_at", "map.put", "map.remove", "map.update":
+	default:
 		return nil, false
 	}
 	args := call.Args
@@ -120,6 +125,48 @@ func (c *compiler) inplace(s *syntax.SetStmt) (code, bool) {
 	}
 	slot := v.slot
 	site := &callSite{name: name, span: call.Span}
+	switch name {
+	case "map.put":
+		key, val := c.expr(byPos[1]), c.expr(byPos[2])
+		return func(f *frame) Value {
+			k, x := key(f), val(f)
+			m := f.slots[slot].(Map)
+			if !m.Owned() {
+				m = m.Edit()
+				f.slots[slot] = m
+			}
+			m.PutMut(k, x)
+			return Unit
+		}, true
+	case "map.remove":
+		key := c.expr(byPos[1])
+		return func(f *frame) Value {
+			k := key(f)
+			m := f.slots[slot].(Map)
+			if !m.Owned() {
+				m = m.Edit()
+			}
+			f.slots[slot] = m.RemoveMut(k)
+			return Unit
+		}, true
+	case "map.update":
+		key, def, fn := c.expr(byPos[1]), c.expr(byPos[2]), c.expr(byPos[3])
+		return func(f *frame) Value {
+			k, d, g := key(f), def(f), fn(f)
+			m := f.slots[slot].(Map)
+			old, ok := m.Get(k)
+			if !ok {
+				old = d
+			}
+			nv := f.th.callValue(g, []Value{old}, site)
+			if !m.Owned() {
+				m = m.Edit()
+				f.slots[slot] = m
+			}
+			m.PutMut(k, nv)
+			return Unit
+		}, true
+	}
 	if name == "list.push" {
 		item := c.expr(byPos[1])
 		return func(f *frame) Value {

@@ -20,6 +20,7 @@ import (
 func genProgram(rng *rand.Rand, stmts int) string {
 	var b strings.Builder
 	b.WriteString(`use std.list
+use std.map
 
 fn ident(l: List[Int]) -> List[Int]
   l
@@ -35,14 +36,16 @@ fn run() -> Str
   var s = "a"
   var t = ""
   var log: List[Str] = []
+  var mm: Map[Int, Int] = {}
 `)
 	snaps := 0
+	msnaps := 0
 	names := []string{"xs", "ys"}
 	pick := func() string { return names[rng.Intn(2)] }
 	for i := 0; i < stmts; i++ {
 		v, w := pick(), pick()
 		k := rng.Intn(50)
-		switch rng.Intn(22) {
+		switch rng.Intn(31) {
 		case 0, 1:
 			fmt.Fprintf(&b, "  set %s = list.push(%s, %d)\n", v, v, k)
 		case 2, 3:
@@ -84,9 +87,29 @@ fn run() -> Str
 			fmt.Fprintf(&b, "  set log = list.push(log, \"${t}\")\n  set t = \"\"\n")
 		case 21:
 			fmt.Fprintf(&b, "  set %s = list.push(%s, first_or_zero(%s))\n", v, v, w)
+		case 22, 23:
+			fmt.Fprintf(&b, "  set mm = map.put(mm, key: %d, value: %d)\n", k%12, rng.Intn(50))
+		case 24:
+			fmt.Fprintf(&b, "  set mm = map.remove(mm, key: %d)\n", k%12)
+		case 25:
+			fmt.Fprintf(&b, "  set mm = map.update(mm, key: %d, default: 0, f: fn(n) => n + %d)\n", k%12, k)
+		case 26:
+			fmt.Fprintf(&b, "  let msnap%d = mm\n", msnaps)
+			msnaps++
+		case 27:
+			fmt.Fprintf(&b, "  set log = list.push(log, \"${mm}\")\n")
+		case 28:
+			fmt.Fprintf(&b, "  for key in map.keys(mm)\n    set mm = map.put(mm, key: key + 100, value: map.get_or(mm, key: key, default: 0))\n  end for\n")
+		case 29:
+			fmt.Fprintf(&b, "  set mm = map.put(mm, key: list.len(%s), value: map.len(mm))\n", v)
+		case 30:
+			fmt.Fprintf(&b, "  for i in list.range(0, %d)\n    set mm = map.put(mm, key: i * 3, value: i)\n  end for\n  for i in list.range(0, %d)\n    set mm = map.remove(mm, key: i * 3)\n  end for\n", 20+k, 20+k)
 		}
 	}
-	b.WriteString("  var out = \"${xs} ${ys} ${s} ${t} ${log}\"\n")
+	b.WriteString("  var out = \"${xs} ${ys} ${s} ${t} ${log} ${mm}\"\n")
+	for i := 0; i < msnaps; i++ {
+		fmt.Fprintf(&b, "  set out = out + \" ${msnap%d}\"\n", i)
+	}
 	for i := 0; i < snaps; i++ {
 		fmt.Fprintf(&b, "  set out = out + \" ${snap%d}\"\n", i)
 	}

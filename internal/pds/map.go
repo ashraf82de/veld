@@ -25,11 +25,13 @@ type Map struct {
 	entries *Vec
 	root    *hnode
 	live    int
+	edit    *Token // non-nil while exclusively owned (see Edit)
 }
 
 type hnode struct {
 	bitmap uint32
 	slots  []hslot
+	edit   *Token
 }
 
 // hslot is a child node, or a bucket of entry positions sharing one hash.

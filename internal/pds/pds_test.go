@@ -266,3 +266,84 @@ func BenchmarkVecSetMut(b *testing.B) {
 		}
 	}
 }
+
+// TestMapOwnership drives PutMut/RemoveMut with random freezes against a
+// model: frozen snapshots must never change.
+func TestMapOwnership(t *testing.T) {
+	rng := rand.New(rand.NewSource(4))
+	for round := 0; round < 30; round++ {
+		m := NewMap(testCfg())
+		model := map[int]int{}
+		var order []int
+		type snap struct {
+			m     *Map
+			model map[int]int
+			order []int
+		}
+		var snaps []snap
+		copyModel := func() (map[int]int, []int) {
+			c := map[int]int{}
+			for k, v := range model {
+				c[k] = v
+			}
+			return c, append([]int(nil), order...)
+		}
+		check := func(m *Map, model map[int]int, order []int) {
+			t.Helper()
+			if m.Len() != len(model) {
+				t.Fatalf("len %d, want %d", m.Len(), len(model))
+			}
+			keys := m.Keys()
+			if len(keys) != len(order) {
+				t.Fatalf("keys %d, want %d", len(keys), len(order))
+			}
+			for i, k := range keys {
+				if k != order[i] {
+					t.Fatalf("order[%d] = %v, want %v", i, k, order[i])
+				}
+				if v, _ := m.Get(k); v != model[order[i]] {
+					t.Fatalf("Get(%d) = %v, want %v", k.(int), v, model[order[i]])
+				}
+			}
+		}
+		for step := 0; step < 2500; step++ {
+			k := rng.Intn(400)
+			switch rng.Intn(10) {
+			case 0:
+				if m.Owned() {
+					m.Freeze()
+				}
+				c, o := copyModel()
+				snaps = append(snaps, snap{m, c, o})
+			case 1, 2, 3:
+				if !m.Owned() {
+					m = m.Edit()
+				}
+				m = m.RemoveMut(k)
+				if _, ok := model[k]; ok {
+					delete(model, k)
+					for i, o := range order {
+						if o == k {
+							order = append(order[:i:i], order[i+1:]...)
+							break
+						}
+					}
+				}
+			default:
+				if !m.Owned() {
+					m = m.Edit()
+				}
+				v := rng.Int()
+				m.PutMut(k, v)
+				if _, ok := model[k]; !ok {
+					order = append(order, k)
+				}
+				model[k] = v
+			}
+		}
+		check(m, model, order)
+		for _, s := range snaps {
+			check(s.m, s.model, s.order)
+		}
+	}
+}

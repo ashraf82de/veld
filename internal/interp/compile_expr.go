@@ -289,7 +289,12 @@ func (c *compiler) ident(e *syntax.Ident) code {
 			// it escape, so the variable gives up exclusive ownership.
 			return func(f *frame) Value {
 				x := f.slots[s]
-				x.(List).Freeze()
+				switch v := x.(type) {
+				case List:
+					v.Freeze()
+				case Map:
+					v.Freeze()
+				}
 				return x
 			}
 		}

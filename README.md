@@ -92,7 +92,8 @@ the agent's context, and let it iterate with `veld check --json`,
 cmd/veld/           the CLI
 internal/syntax/    lexer, parser, AST (precise spans, recovery, targeted hints)
 internal/types/     checker: inference, effects, exhaustiveness, fixes
-internal/interp/    reference interpreter and native stdlib functions
+internal/interp/    closure compiler, runtime and native stdlib functions
+internal/pds/       persistent vector and hash map behind List and Map
 internal/format/    canonical formatter
 internal/codes/     documentation for every diagnostic code
 std/                standard library, mostly written in Veld
@@ -100,15 +101,46 @@ docs/               LANGUAGE.md (agent guide), DESIGN.md, rfcs/
 examples/           runnable programs (CLI, HTTP API, parser, multi-module)
 evals/              tasks for measuring how well agents write Veld
 testdata/errors/    golden diagnostic cases
+testdata/semantics/ runtime behaviour tests
+bench/              benchmark programs
+.claude/            the veld-maintainer agent and its commands
 tests/              end-to-end test suite
 ```
 
+## Performance and memory
+
+Veld compiles each function to a tree of Go closures: variables live in frame
+slots, calls and constructors are resolved once, `return`/`break`/`?` are flags
+rather than panics, and Int/Float/Bool arithmetic runs unboxed.
+
+| Program (`bench/`)                      | Time    |
+|-----------------------------------------|---------|
+| `fib(32)`, 7M calls                     | 0.17 s  |
+| 20M-iteration loop                      | 0.63 s  |
+| 2M-element sieve with `list.set_at`     | 0.44 s  |
+| 50,000-deep `[first, ..rest]` recursion | 0.04 s  |
+| 60,000 string appends                   | 0.27 s  |
+| 16 x `fib(30)` with `task.parallel_map` | 0.24 s  |
+
+Lists and maps are persistent (structure-sharing) values, so updates are
+O(log n), slices are O(1), and values are safe to share between threads. When a
+local `var` is provably the only holder of a list or string, `set xs =
+list.push(xs, x)` and `set s = s + x` update it in place; any read that could
+leak it freezes it first, so programs cannot observe the difference (a
+differential test enforces this). Tail calls use no stack. Memory is managed by
+Go's garbage collector; there are no cycles to leak because values are immutable.
+
 ## Status
 
-v0.1: a complete tree-walking implementation with a static checker, stdlib
-(strings, lists, maps, math, JSON, files, env, time, random, HTTP server and
-client), formatter, test runner and agent tooling. See [ROADMAP.md](ROADMAP.md)
-for what comes next (compiled backend, effect polymorphism, packages, ...).
+v0.2 (in development): checker, closure-compiling runtime, standard library
+(text, collections, math, JSON, regex, CSV, dates, crypto, files, processes,
+HTTP server and client, shared state, parallel map), formatter, test runner and
+agent tooling. See [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).
+
+The repository is maintained by an agent as well as by people: issues are
+triaged automatically, fixes arrive as pull requests, and agent feedback
+(`veld report`, the *Agent feedback* issue form) drives the roadmap. See
+[docs/MAINTAINING.md](docs/MAINTAINING.md).
 
 Veld evolves continuously: changes are proposed as RFCs, measured against the
 eval suite, and must keep every test green. See [CONTRIBUTING.md](CONTRIBUTING.md).

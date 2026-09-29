@@ -102,8 +102,10 @@ dependency on training-data familiarity with a large API surface.
 - **Effect polymorphism** is limited to function-typed parameters without an
   explicit `uses`; storing an effectful closure in a data structure can hide
   its effect from the checker (the runtime still enforces capabilities).
-- **Performance**: v0.1 is a tree-walking interpreter with copy-on-update
-  collections. Correctness first; see the roadmap.
+- **Performance**: a closure-compiling interpreter over persistent collections,
+  with in-place updates for provably unshared lists and strings. It is fast
+  for an interpreter (see README) but not native; a bytecode or native backend
+  is on the roadmap.
 
 ## How decisions are evaluated
 

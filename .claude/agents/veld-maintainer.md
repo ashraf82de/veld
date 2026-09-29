@@ -82,7 +82,9 @@ They are short and they are the source of truth; this file is only the summary.
   reused for a different meaning. A fix attached to a diagnostic repairs it.
 - The example in `docs/LANGUAGE.md` checks, passes and is canonically formatted.
 - Values are immutable and goroutine-safe. In-place list updates
-  (`internal/interp/compile_owned.go`, `internal/pds`) must never be observable:
+  (`internal/interp/compile_owned.go`, `compile_strbuf.go`, `internal/pds`) must never be
+  observable (`TestInPlaceUpdatesAreUnobservable` compares random programs with
+  and without them):
   a value that was read anywhere must not change afterwards.
 - Effects are enforced statically and again at runtime.
 - No third-party Go dependencies.

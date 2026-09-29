@@ -56,12 +56,19 @@ func paramNames(fi *types.FuncInfo) []string {
 	return names
 }
 
+// DisableInPlace turns off in-place list and string updates for interpreters
+// created afterwards. Tests use it to check that results never depend on them.
+var DisableInPlace bool
+
 // inplace compiles `set xs = list.push(xs, x)` and
 // `set xs = list.set_at(xs, index: i, item: x)` when xs is a local var. The
 // first compilation pass only records that xs is updated this way (the
 // variable must be known to be owned before any of its reads are compiled);
 // later passes emit the in-place code.
 func (c *compiler) inplace(s *syntax.SetStmt) (code, bool) {
+	if DisableInPlace {
+		return nil, false
+	}
 	var call *syntax.CallExpr
 	var piped syntax.Expr
 	switch v := s.Value.(type) {

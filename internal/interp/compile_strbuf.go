@@ -48,6 +48,9 @@ func (c *compiler) concatOperands(e syntax.Expr, name string) ([]syntax.Expr, bo
 // inplaceStr compiles `set s = s + a + ...` for a local Str var. Like inplace,
 // the first pass only records the variable; later passes emit the append.
 func (c *compiler) inplaceStr(s *syntax.SetStmt) (code, bool) {
+	if DisableInPlace {
+		return nil, false
+	}
 	if !c.is(s.Value, "Str") {
 		return nil, false
 	}

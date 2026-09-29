@@ -1,0 +1,21 @@
+use solution
+
+fn sale(region: Str, product: Str, units: Int, price: Float) -> solution.Sale
+  solution.Sale{region: region, product: product, units: units, price: price}
+end fn
+
+test "report"
+  let sales = [
+    sale("west", product: "pens", units: 10, price: 1.5),
+    sale("east", product: "ink", units: 2, price: 20.0),
+    sale("west", product: "pads", units: 12, price: 2.25),
+    sale("east", product: "ink", units: 1, price: 20.0),
+    sale("east", product: "pens", units: 3, price: 1.5),
+  ]
+  expect solution.report(sales) == ["east: 6 units, revenue 64.50, top: ink", "west: 22 units, revenue 42.00, top: pads"]
+end test
+
+test "ties and empty"
+  expect solution.report([sale("n", product: "b", units: 5, price: 1.0), sale("n", product: "a", units: 5, price: 1.0)]) == ["n: 10 units, revenue 10.00, top: a"]
+  expect solution.report([]) == []
+end test

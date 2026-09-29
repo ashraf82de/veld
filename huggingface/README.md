@@ -58,7 +58,7 @@ If a model struggles with Veld, we want to know: run
 `veld report your_file.veld -m "what went wrong" --feedback` and open the link it
 prints, or open an issue at
 [github.com/ashraf82de/veld/issues](https://github.com/ashraf82de/veld/issues).
-The dataset grows with that feedback; the repository is at 17 tasks today.
+The dataset grows with that feedback; the repository is at 24 tasks today.
 
 ## License
 

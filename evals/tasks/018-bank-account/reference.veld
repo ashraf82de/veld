@@ -1,0 +1,64 @@
+use std.list
+use std.map
+
+pub record Account
+  id: Str
+  balance: Int
+end record
+
+pub type Tx
+  case Deposit(id: Str, amount: Int)
+  case Withdraw(id: Str, amount: Int)
+  case Transfer(from: Str, to: Str, amount: Int)
+end type
+
+fn find(accounts: Map[Str, Account], id: Str) -> Result[Account, Str]
+  match map.get(accounts, id)
+    case Some(a) => Ok(a)
+    case None => Err("unknown account: ${id}")
+  end match
+end fn
+
+fn adjust(accounts: Map[Str, Account], account: Account, delta: Int) -> Result[Map[Str, Account], Str]
+  let balance = account.balance + delta
+  if balance < 0
+    return Err("insufficient funds")
+  end if
+  Ok(map.put(accounts, key: account.id, value: Account{..account, balance: balance}))
+end fn
+
+pub fn apply(accounts: Map[Str, Account], tx: Tx) -> Result[Map[Str, Account], Str]
+  match tx
+    case Deposit(id, amount)
+      if amount <= 0
+        return Err("invalid amount")
+      end if
+      let account = find(accounts, id)?
+      adjust(accounts, account: account, delta: amount)
+    case Withdraw(id, amount)
+      if amount <= 0
+        return Err("invalid amount")
+      end if
+      let account = find(accounts, id)?
+      adjust(accounts, account: account, delta: 0 - amount)
+    case Transfer(from, to, amount)
+      if amount <= 0
+        return Err("invalid amount")
+      end if
+      let source = find(accounts, from)?
+      let target = find(accounts, to)?
+      if from == to
+        return Err("same account")
+      end if
+      let after_debit = adjust(accounts, account: source, delta: 0 - amount)?
+      adjust(after_debit, account: target, delta: amount)
+  end match
+end fn
+
+pub fn apply_all(accounts: Map[Str, Account], txs: List[Tx]) -> Result[Map[Str, Account], Str]
+  var current = accounts
+  for tx in txs
+    set current = apply(current, tx)?
+  end for
+  Ok(current)
+end fn

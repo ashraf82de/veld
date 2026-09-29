@@ -1,0 +1,39 @@
+use std.list
+
+pub record Interval
+  start: Int
+  stop: Int
+end record
+
+pub fn merge(intervals: List[Interval]) -> List[Interval]
+  let sorted = list.sort_by(list.filter(intervals, fn(i) => i.stop > i.start), fn(i) => i.start)
+  var out: List[Interval] = []
+  for next in sorted
+    match list.last(out)
+      case Some(last)
+        if next.start <= last.stop
+          set out = list.set_at(
+            out,
+            index: list.len(out) - 1,
+            item: Interval{start: last.start, stop: max_int(last.stop, next.stop)},
+          )
+        else
+          set out = list.push(out, next)
+        end if
+      case None => set out = list.push(out, next)
+    end match
+  end for
+  out
+end fn
+
+fn max_int(a: Int, b: Int) -> Int
+  if a > b
+    a
+  else
+    b
+  end if
+end fn
+
+pub fn total_length(intervals: List[Interval]) -> Int
+  list.sum(list.map(merge(intervals), fn(i) => i.stop - i.start))
+end fn

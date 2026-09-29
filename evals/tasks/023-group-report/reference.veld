@@ -1,0 +1,34 @@
+use std.list
+use std.map
+use std.math
+use std.str
+
+pub record Sale
+  region: Str
+  product: Str
+  units: Int
+  price: Float
+end record
+
+fn top_product(sales: List[Sale]) -> Str
+  var units: Map[Str, Int] = {}
+  for s in sales
+    set units = map.update(units, key: s.product, default: 0, f: fn(n) => n + s.units)
+  end for
+  let ranked = list.sort_by(list.sort(map.keys(units)), fn(p) => 0 - map.get_or(units, key: p, default: 0))
+  list.get_or(ranked, index: 0, fallback: "")
+end fn
+
+pub fn report(sales: List[Sale]) -> List[Str]
+  let groups = list.group_by(sales, key: fn(s) => s.region)
+  list.map(
+    list.sort(map.keys(groups)),
+    fn(region) => line(region, map.get_or(groups, key: region, default: [])),
+  )
+end fn
+
+fn line(region: Str, sales: List[Sale]) -> Str
+  let units = list.sum(list.map(sales, fn(s) => s.units))
+  let revenue = list.sum_float(list.map(sales, fn(s) => math.to_float(s.units) * s.price))
+  "${region}: ${units} units, revenue ${str.fixed(revenue, 2)}, top: ${top_product(sales)}"
+end fn

@@ -1,0 +1,27 @@
+use solution
+
+test "encode"
+  expect solution.encode("aaabcc") == "3a1b2c"
+  expect solution.encode("") == ""
+  expect solution.encode("x") == "1x"
+  expect solution.encode("éééa") == "3é1a"
+  expect solution.encode("aaaaaaaaaaaa") == "12a"
+end test
+
+test "decode"
+  expect solution.decode("3a1b2c") == Ok("aaabcc")
+  expect solution.decode("") == Ok("")
+  expect solution.decode("12a") == Ok("aaaaaaaaaaaa")
+  expect solution.decode("2é") == Ok("éé")
+end test
+
+test "malformed"
+  expect solution.decode("a") == Err("malformed input")
+  expect solution.decode("3") == Err("malformed input")
+  expect solution.decode("0a") == Err("malformed input")
+  expect solution.decode("2a3") == Err("malformed input")
+end test
+
+test "round trip"
+  expect solution.decode(solution.encode("hello wooorld")) == Ok("hello wooorld")
+end test

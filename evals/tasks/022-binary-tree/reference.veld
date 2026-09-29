@@ -1,0 +1,59 @@
+use std.list
+
+pub type Tree
+  case Leaf
+  case Node(left: Tree, value: Int, right: Tree)
+end type
+
+pub fn insert(tree: Tree, value: Int) -> Tree
+  match tree
+    case Leaf => Node(left: Leaf, value: value, right: Leaf)
+    case Node(left, v, right)
+      if value < v
+        Node(left: insert(left, value), value: v, right: right)
+      else if value > v
+        Node(left: left, value: v, right: insert(right, value))
+      else
+        tree
+      end if
+  end match
+end fn
+
+pub fn contains(tree: Tree, value: Int) -> Bool
+  match tree
+    case Leaf => false
+    case Node(left, v, right)
+      if value == v
+        true
+      else if value < v
+        contains(left, value)
+      else
+        contains(right, value)
+      end if
+  end match
+end fn
+
+pub fn to_list(tree: Tree) -> List[Int]
+  match tree
+    case Leaf => []
+    case Node(left, v, right) => to_list(left) + [v] + to_list(right)
+  end match
+end fn
+
+pub fn height(tree: Tree) -> Int
+  match tree
+    case Leaf => 0
+    case Node(left, _, right)
+      let l = height(left)
+      let r = height(right)
+      1 + if l > r
+        l
+      else
+        r
+      end if
+  end match
+end fn
+
+pub fn from_list(values: List[Int]) -> Tree
+  list.fold(values, init: Leaf, step: insert)
+end fn

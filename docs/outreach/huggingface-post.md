@@ -40,7 +40,7 @@ veld spec            # the guide, for the model's context
 veld new app && veld test app
 ```
 
-There are 17 programming tasks with hidden tests in the
+There are 24 programming tasks with hidden tests in the
 [Veld evals dataset](https://huggingface.co/datasets/ashraf82de/veld-evals)
 (state machines, routers, CSV and JSON processing, regex, an LRU cache, matrix
 math, shortest paths). Give a model the guide and a task prompt, let it use

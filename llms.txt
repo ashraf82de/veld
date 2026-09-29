@@ -18,7 +18,7 @@ Veld is for agents that write and run programs: CLI tools, HTTP/JSON services, d
 ## Examples and evals
 
 - [Examples](https://github.com/ashraf82de/veld/tree/main/examples): CLI, HTTP API with shared state, parser, multi-module project
-- [Eval tasks](https://github.com/ashraf82de/veld/tree/main/evals/tasks): 17 programming tasks with hidden tests, also published as a dataset (see huggingface/README.md)
+- [Eval tasks](https://github.com/ashraf82de/veld/tree/main/evals/tasks): 24 programming tasks with hidden tests, also published as a dataset (see huggingface/README.md)
 
 ## Give feedback (this is what drives the roadmap)
 

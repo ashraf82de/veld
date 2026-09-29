@@ -1,0 +1,45 @@
+use std.list
+use std.str
+
+record Open
+  symbol: Str
+  index: Int
+end record
+
+fn partner(closer: Str) -> Str
+  match closer
+    case ")" => "("
+    case "]" => "["
+    case "}" => "{"
+    case _ => ""
+  end match
+end fn
+
+pub fn first_error(text: Str) -> Option[Int]
+  var stack: List[Open] = []
+  var i = 0
+  for c in str.chars(text)
+    if c == "(" or c == "[" or c == "{"
+      set stack = list.push(stack, Open{symbol: c, index: i})
+    else if c == ")" or c == "]" or c == "}"
+      match list.last(stack)
+        case Some(top)
+          if top.symbol == partner(c)
+            set stack = list.take(stack, list.len(stack) - 1)
+          else
+            return Some(i)
+          end if
+        case None => return Some(i)
+      end match
+    end if
+    set i = i + 1
+  end for
+  match list.first(stack)
+    case Some(o) => Some(o.index)
+    case None => None
+  end match
+end fn
+
+pub fn balanced(text: Str) -> Bool
+  first_error(text) == None
+end fn

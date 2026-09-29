@@ -1,0 +1,23 @@
+use std.list
+use solution
+
+test "insert and query"
+  let t = solution.from_list([5, 3, 8, 1, 4, 7, 9, 3])
+  expect solution.to_list(t) == [1, 3, 4, 5, 7, 8, 9]
+  expect solution.contains(t, 4)
+  expect not solution.contains(t, 6)
+  expect solution.height(t) == 3
+end test
+
+test "empty and degenerate"
+  expect solution.to_list(solution.Leaf) == []
+  expect solution.height(solution.Leaf) == 0
+  expect not solution.contains(solution.Leaf, 1)
+  expect solution.height(solution.from_list([1, 2, 3, 4, 5])) == 5
+end test
+
+test "bigger tree"
+  let values = list.map(list.range(0, 500), fn(i) => (i * 37) % 501)
+  let t = solution.from_list(values)
+  expect solution.to_list(t) == list.sort(values)
+end test

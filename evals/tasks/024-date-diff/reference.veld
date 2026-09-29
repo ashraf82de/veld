@@ -1,0 +1,36 @@
+use std.datetime
+use std.list
+use std.str
+
+fn parse(date: Str) -> Result[Int, Str]
+  match datetime.parse_iso(date + "T00:00:00Z")
+    case Some(ms)
+      if str.len(date) == 10
+        Ok(ms)
+      else
+        Err("invalid date: ${date}")
+      end if
+    case None => Err("invalid date: ${date}")
+  end match
+end fn
+
+fn day_ms() -> Int
+  86400000
+end fn
+
+pub fn days_between(from: Str, to: Str) -> Result[Int, Str]
+  let a = parse(from)?
+  let b = parse(to)?
+  Ok((b - a) / day_ms())
+end fn
+
+pub fn add_days(date: Str, days: Int) -> Result[Str, Str]
+  let ms = parse(date)? + days * day_ms()
+  Ok(str.slice(datetime.iso(ms), start: 0, stop: 10))
+end fn
+
+pub fn weekday_name(date: Str) -> Result[Str, Str]
+  let ms = parse(date)?
+  let names = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+  Ok(list.get_or(names, index: datetime.weekday(ms), fallback: "?"))
+end fn

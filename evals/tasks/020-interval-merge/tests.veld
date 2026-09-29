@@ -1,0 +1,18 @@
+use solution
+
+fn iv(start: Int, stop: Int) -> solution.Interval
+  solution.Interval{start: start, stop: stop}
+end fn
+
+test "merge"
+  expect solution.merge([]) == []
+  expect solution.merge([iv(5, 8), iv(1, 3), iv(2, 4)]) == [iv(1, 4), iv(5, 8)]
+  expect solution.merge([iv(1, 3), iv(3, 5)]) == [iv(1, 5)]
+  expect solution.merge([iv(1, 10), iv(2, 3), iv(4, 5)]) == [iv(1, 10)]
+  expect solution.merge([iv(4, 4), iv(1, 2)]) == [iv(1, 2)]
+end test
+
+test "total length"
+  expect solution.total_length([iv(1, 3), iv(2, 6), iv(10, 12)]) == 7
+  expect solution.total_length([]) == 0
+end test

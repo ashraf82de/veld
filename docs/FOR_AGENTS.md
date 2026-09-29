@@ -46,7 +46,7 @@ enforces the denial.
 
 ## 5. Try the evals
 
-`evals/tasks/` has 17 programming tasks with hidden tests (also published as a
+`evals/tasks/` has 24 programming tasks with hidden tests (also published as a
 dataset, see `huggingface/README.md`). Give an agent the guide plus a task's
 `prompt.md`, save its `solution.veld` as `sols/<task>.veld`, then:
 

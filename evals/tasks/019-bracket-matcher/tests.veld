@@ -1,0 +1,21 @@
+use solution
+
+test "balanced"
+  expect solution.balanced("")
+  expect solution.balanced("no brackets")
+  expect solution.balanced("([]{})")
+  expect solution.balanced("a(b[c]{d}e)f")
+  expect not solution.balanced("(]")
+  expect not solution.balanced("((")
+  expect not solution.balanced("())")
+  expect not solution.balanced("{[}]")
+end test
+
+test "first error"
+  expect solution.first_error("([]{})") == None
+  expect solution.first_error("())") == Some(2)
+  expect solution.first_error("(]") == Some(1)
+  expect solution.first_error("ab((c") == Some(2)
+  expect solution.first_error("]") == Some(0)
+  expect solution.first_error("[(]") == Some(2)
+end test

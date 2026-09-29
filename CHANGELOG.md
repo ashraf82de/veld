@@ -52,8 +52,9 @@ change lists how to migrate (`veld fix` carries the migration where possible).
   `crypto`, `csv`, `datetime`, `process`, `state`; prelude `Pair[A, B]`;
   new functions in `str`, `list`, `map`, `math`, `json`, `http` (see
   docs/LANGUAGE.md). `examples/notes_api.veld` is a concurrent CRUD server.
-- Eval tasks 009-017 (state machine, router, CSV report, regex, LRU cache,
-  JSON summary, matrix, word wrap, shortest path).
+- Eval tasks 009-024 (state machine, router, CSV report, regex, LRU cache,
+  JSON summary, matrix, word wrap, shortest path, bank, brackets, intervals,
+  run-length, binary tree, group report, dates).
 - `veld report <files> -m "..."` prints a Markdown bug report (environment,
   source, diagnostics, test results) ready to paste into an issue.
 - `case pattern =>` followed by a newline and an indented block is accepted

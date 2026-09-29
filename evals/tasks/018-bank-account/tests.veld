@@ -1,0 +1,37 @@
+use std.map
+use solution
+
+fn bank() -> Map[Str, solution.Account]
+  {"a": solution.Account{id: "a", balance: 100}, "b": solution.Account{id: "b", balance: 5}}
+end fn
+
+fn balance(accounts: Map[Str, solution.Account], id: Str) -> Int
+  match map.get(accounts, id)
+    case Some(a) => a.balance
+    case None => -1
+  end match
+end fn
+
+test "deposit and withdraw"
+  match solution.apply_all(bank(), [solution.Deposit("a", 50), solution.Withdraw("a", 30)])
+    case Ok(m) => expect balance(m, "a") == 120
+    case Err(e) => expect e == ""
+  end match
+end test
+
+test "transfer"
+  match solution.apply(bank(), solution.Transfer("a", to: "b", amount: 40))
+    case Ok(m) => expect balance(m, "a") == 60 and balance(m, "b") == 45
+    case Err(e) => expect e == ""
+  end match
+end test
+
+test "errors"
+  expect solution.apply(bank(), solution.Deposit("a", 0)) == Err("invalid amount")
+  expect solution.apply(bank(), solution.Deposit("zz", 1)) == Err("unknown account: zz")
+  expect solution.apply(bank(), solution.Withdraw("b", 6)) == Err("insufficient funds")
+  expect solution.apply(bank(), solution.Transfer("a", to: "a", amount: 1)) == Err("same account")
+  expect solution.apply(bank(), solution.Transfer("x", to: "y", amount: 1)) == Err("unknown account: x")
+  expect solution.apply(bank(), solution.Transfer("a", to: "y", amount: 1)) == Err("unknown account: y")
+  expect solution.apply_all(bank(), [solution.Deposit("a", 1), solution.Withdraw("b", 99), solution.Deposit("a", 1)]) == Err("insufficient funds")
+end test

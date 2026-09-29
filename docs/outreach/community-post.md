@@ -26,7 +26,7 @@ numbers from `bench/` on a laptop: fib(32) 0.17 s, 20M-iteration loop 0.63 s,
 2M sieve 0.44 s. It is an interpreter, not a native compiler, and the syntax can
 still change before 1.0.
 
-There is a 17-task eval set with hidden tests (also on the Hugging Face Hub) so
+There is a 24-task eval set with hidden tests (also on the Hugging Face Hub) so
 you can measure how well a given model does with the guide plus compiler
 feedback.
 

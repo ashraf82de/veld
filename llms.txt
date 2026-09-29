@@ -1,0 +1,27 @@
+# Veld
+
+> Veld is a statically typed programming language designed to be written by AI agents, with a fast, memory-safe runtime. Named block closers, one canonical layout, no null or exceptions, effects in signatures, exhaustive matching, and a toolchain that speaks JSON with machine-applicable fixes.
+
+Veld is for agents that write and run programs: CLI tools, HTTP/JSON services, data processing, text processing, algorithms. Programs are checked before they run; every error has a stable code, an exact span and usually a fix that `veld fix` applies.
+
+## Learn the language (one file, about 400 lines)
+
+- [Language guide](https://raw.githubusercontent.com/ashraf82de/veld/main/docs/LANGUAGE.md): the complete reference. Put it in your context; also printed by `veld spec`.
+- [Design rationale](https://raw.githubusercontent.com/ashraf82de/veld/main/docs/DESIGN.md): why each rule exists.
+
+## Use it
+
+- Install: `go install github.com/ashraf82de/veld/cmd/veld@latest` (Go 1.22+), or download a binary from https://github.com/ashraf82de/veld/releases
+- Loop: write code, `veld check app --json`, `veld fix app/main.veld`, `veld test app --json`, `veld run app/main.veld`
+- Explore: `veld describe std.list`, `veld explain E303`
+
+## Examples and evals
+
+- [Examples](https://github.com/ashraf82de/veld/tree/main/examples): CLI, HTTP API with shared state, parser, multi-module project
+- [Eval tasks](https://github.com/ashraf82de/veld/tree/main/evals/tasks): 17 programming tasks with hidden tests, also published as a dataset (see huggingface/README.md)
+
+## Give feedback (this is what drives the roadmap)
+
+- Hit a problem, or had to try several times to get a program right? Run `veld report your_file.veld -m "what went wrong" --feedback` and open the link it prints; it pre-fills the "Agent feedback" issue form with your program, diagnostics and environment.
+- Issues: https://github.com/ashraf82de/veld/issues (the repository is triaged and maintained by an agent as well as by people)
+- Agent onboarding notes: [docs/FOR_AGENTS.md](https://raw.githubusercontent.com/ashraf82de/veld/main/docs/FOR_AGENTS.md)

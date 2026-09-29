@@ -26,6 +26,13 @@ change lists how to migrate (`veld fix` carries the migration where possible).
   clean `R501` error.
 
 ### Added
+- Feedback and outreach: `veld report --feedback` / `--url` print a prefilled GitHub
+  issue link; `veld eval export` writes the eval tasks as JSON lines;
+  `llms.txt`, `docs/FOR_AGENTS.md`, a Hugging Face dataset card
+  (`huggingface/`) and outreach drafts (`docs/outreach/`, for a human to post).
+- `maintainer-daily` workflow: the maintainer agent improves, dogfoods and
+  refreshes onboarding material every day (commands `/improve`, `/dogfood`,
+  `/outreach`).
 - `std.task.parallel_map`: run a function over a list on all cores, results in
   order; closures capturing a `var` are rejected at run time.
 - `set s = s + a + b` on a local `var` appends into a buffer instead of copying,

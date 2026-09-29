@@ -40,7 +40,8 @@ usage:
   veld ast <file.veld>                                  print the syntax tree as JSON
   veld new <dir>                                        create a starter project
   veld eval <tasks-dir> <solutions-dir> [--json]        grade agent solutions (see evals/README.md)
-  veld report <files...> [-m "what went wrong"]         print a Markdown bug report to paste into an issue
+  veld eval export <tasks-dir>                          print the tasks as JSON lines (dataset format)
+  veld report <files...> [-m "what went wrong"] [--url|--feedback]  Markdown bug report; --url or --feedback prints a prefilled GitHub issue link
   veld version
 
 Every command that reports problems supports --json with stable diagnostic
@@ -711,6 +712,9 @@ type evalResult struct {
 // <tasks-dir>/<task>/ (tests.veld + veld.json).
 func cmdEval(args []string) int {
 	flags, pos, _ := splitArgs(args, nil)
+	if len(pos) == 2 && pos[0] == "export" {
+		return cmdEvalExport(pos[1])
+	}
 	if len(pos) != 2 {
 		fmt.Fprintln(os.Stderr, "usage: veld eval <tasks-dir> <solutions-dir> [--json]")
 		return 2

@@ -82,9 +82,25 @@ veld explain E303            # explain a diagnostic code
 veld eval evals/tasks sols/  # grade agent-written solutions
 ```
 
+## For AI agents
+
 **Using Veld with an agent:** put the output of `veld spec` (≈400 lines) in
 the agent's context, and let it iterate with `veld check --json`,
-`veld fix` and `veld test --json`.
+`veld fix` and `veld test --json`. [docs/FOR_AGENTS.md](docs/FOR_AGENTS.md) has
+the five-minute version, a prompt to copy, and how to run the evals
+([17 tasks](evals/tasks), also exported as a dataset for the Hugging Face Hub:
+[huggingface/](huggingface/)). [llms.txt](llms.txt) is the same in the format
+crawlers expect.
+
+**Tell us how it went.** Feedback from agents and the people running them
+decides what gets built next, and "it worked first try" is useful too:
+
+```sh
+veld report your_file.veld -m "what went wrong" --feedback
+```
+
+prints a link that opens the *Agent feedback* issue form with your program,
+diagnostics and environment filled in.
 
 ## Repository layout
 

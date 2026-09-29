@@ -1,9 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
+	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 
 	"github.com/ashraf82de/veld/internal/diag"
@@ -93,6 +97,62 @@ func cmdReport(args []string) int {
 			fmt.Fprintf(&b, "\n```\n%s```\n", out.String())
 		}
 	}
+	if flags["url"] == "true" || flags["feedback"] == "true" {
+		fmt.Println(issueURL(flags["feedback"] == "true", message, b.String()))
+		return 0
+	}
 	fmt.Print(b.String())
+	return 0
+}
+
+const issuesNew = "https://github.com/ashraf82de/veld/issues/new"
+
+// issueURL builds a link that opens the right issue form with the report
+// already filled in, so an agent (or its operator) can file it with one click.
+// The report is truncated to keep the URL within what browsers accept.
+func issueURL(feedback bool, message, md string) string {
+	const budget = 2500
+	if len(md) > budget {
+		md = md[:budget] + "\n\n(truncated: run veld report without --url for the full text)"
+	}
+	q := url.Values{}
+	if feedback {
+		q.Set("template", "agent_feedback.yml")
+		q.Set("task", message)
+		q.Set("friction", md)
+	} else {
+		q.Set("template", "bug_report.yml")
+		q.Set("report", md)
+	}
+	return issuesNew + "?" + q.Encode()
+}
+
+// cmdEvalExport prints the eval tasks as JSON lines (one object per task), the
+// format used for the published dataset: task id, prompt, hidden tests and a
+// reference solution. `veld eval export <tasks-dir>`.
+func cmdEvalExport(dir string) int {
+	tasks, _ := filepath.Glob(filepath.Join(dir, "*", "tests.veld"))
+	sort.Strings(tasks)
+	if len(tasks) == 0 {
+		fmt.Fprintln(os.Stderr, "veld eval export: no tasks found in", dir)
+		return 2
+	}
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetEscapeHTML(false)
+	for _, t := range tasks {
+		d := filepath.Dir(t)
+		read := func(name string) string {
+			b, _ := os.ReadFile(filepath.Join(d, name))
+			return strings.ReplaceAll(string(b), "\r\n", "\n")
+		}
+		enc.Encode(map[string]string{
+			"task_id":   filepath.Base(d),
+			"prompt":    read("prompt.md"),
+			"tests":     read("tests.veld"),
+			"reference": read("reference.veld"),
+			"language":  "veld",
+			"version":   version,
+		})
+	}
 	return 0
 }

@@ -505,3 +505,24 @@ func (*ListPat) isPattern()      {}
 
 // IsUpper reports whether a name is a type/constructor name.
 func IsUpper(name string) bool { return name != "" && name[0] >= 'A' && name[0] <= 'Z' }
+
+// FieldPat is one `name` or `name: pattern` entry of a record pattern. For the
+// shorthand `name`, Pat is a BindPat of the same name and Shorthand is set.
+type FieldPat struct {
+	Name      string    `json:"name"`
+	Pat       Pattern   `json:"pattern"`
+	Shorthand bool      `json:"shorthand,omitempty"`
+	Span      diag.Span `json:"span"`
+}
+
+// RecordPat matches a record: `User{name, age: 3, ..}`.
+type RecordPat struct {
+	Module  string      `json:"module,omitempty"`
+	Name    string      `json:"name"`
+	Fields  []*FieldPat `json:"fields"`
+	HasRest bool        `json:"has_rest,omitempty"` // trailing `..`
+	Span    diag.Span   `json:"span"`
+}
+
+func (p *RecordPat) Sp() diag.Span { return p.Span }
+func (*RecordPat) isPattern()      {}

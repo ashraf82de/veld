@@ -75,6 +75,8 @@ var All = map[string]Info{
 	"E507": {"case arity in multi-value match", "`match a, b` needs exactly one pattern per value in every `case`: `case Idle, Start =>`. Use `_` for values you do not care about."},
 	"E508": {"too many match values", "A `match` can list at most 4 values; group related values in a record."},
 	"E509": {"several patterns in a single-value match", "A `case` lists several patterns only when the `match` lists several values: write `match a, b` and `case p, q =>`."},
+	"E510": {"incomplete record pattern", "A record pattern must mention every field or end with `..`: `case User{name, ..} =>`. This keeps a case honest when the record gains a field."},
+	"E511": {"unknown record or field in a pattern", "Record patterns name a record type and its fields: `case User{name, age: 3} =>`. Check the spelling; sum types are matched by their variants."},
 	"E601": {"unknown module", "Import modules at the top of the file: `use std.list` or `use util.text` (the file util/text.veld next to the entry file)."},
 	"E602": {"import cycle", "Modules cannot import each other in a cycle."},
 	"E603": {"module not found", "The module file does not exist. Local modules are resolved relative to the entry file's directory."},

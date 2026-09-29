@@ -156,7 +156,106 @@ func (c *Checker) checkPattern(p syntax.Pattern, t Type, bound map[string]bool) 
 				c.checkPattern(a, c.fresh(), bound)
 			}
 		}
+	case *syntax.RecordPat:
+		c.checkRecordPattern(p, t, bound)
 	}
+}
+
+// findRecord resolves the record type a pattern names, without reporting.
+func (c *Checker) findRecord(module, name string) *TypeInfo {
+	var ti *TypeInfo
+	if module != "" {
+		if dep, ok := c.mod.Imports[module]; ok {
+			ti = dep.Types[name]
+		}
+	} else {
+		ti = c.mod.Types[name]
+		if ti == nil && c.prelude != nil {
+			ti = c.prelude.Types[name]
+		}
+	}
+	if ti != nil && ti.IsRecord {
+		return ti
+	}
+	return nil
+}
+
+func (c *Checker) checkRecordPattern(p *syntax.RecordPat, t Type, bound map[string]bool) {
+	ti := c.findRecord(p.Module, p.Name)
+	if ti == nil {
+		what := "unknown record type `" + p.Name + "`"
+		if p.Module != "" {
+			if _, ok := c.mod.Imports[p.Module]; !ok {
+				c.unknownModule(p.Module, p.Span)
+				what = ""
+			}
+		} else if other := c.mod.Types[p.Name]; other != nil {
+			what = "`" + p.Name + "` is a sum type, not a record; match its variants, e.g. `" + firstCtor(other) + "(...)`"
+		}
+		if what != "" {
+			d := c.errf("E511", p.Span, "%s", what)
+			if s := diag.Suggest(p.Name, keys(c.mod.Types)); s != "" && p.Module == "" {
+				d.Note("did you mean `%s`?", s)
+			}
+		}
+		for _, fp := range p.Fields {
+			c.checkPattern(fp.Pat, c.fresh(), bound)
+		}
+		return
+	}
+	if p.Module != "" && !ti.Pub {
+		c.errf("E206", p.Span, "record `%s.%s` is not `pub`", p.Module, p.Name)
+	}
+	ct, m := c.instantiateType(ti)
+	if !Unify(t, ct) {
+		c.errf("E301", p.Span, "pattern `%s{...}` matches type %s, but the value has type %s", p.Name, ti.Name, Show(t))
+	}
+	seen := map[string]bool{}
+	for _, fp := range p.Fields {
+		fd, _, ok := ti.Field(fp.Name)
+		if !ok {
+			d := c.errf("E511", fp.Span, "record `%s` has no field `%s`", ti.Name, fp.Name)
+			var names []string
+			for _, x := range ti.Fields {
+				names = append(names, x.Name)
+			}
+			if s := diag.Suggest(fp.Name, names); s != "" && fp.Shorthand {
+				d.Note("did you mean `%s`?", s)
+			}
+			c.checkPattern(fp.Pat, c.fresh(), bound)
+			continue
+		}
+		if seen[fp.Name] {
+			c.errf("E502", fp.Span, "field `%s` is matched twice in the same pattern", fp.Name)
+		}
+		seen[fp.Name] = true
+		c.checkPattern(fp.Pat, Subst(fd.Type, m), bound)
+	}
+	if !p.HasRest && len(seen) < len(ti.Fields) {
+		var missing []string
+		for _, f := range ti.Fields {
+			if !seen[f.Name] {
+				missing = append(missing, f.Name)
+			}
+		}
+		d := c.errf("E510", p.Span, "record pattern `%s{...}` does not mention field(s) %s; list them or end the pattern with `..`", ti.Name, strings.Join(missing, ", "))
+		at := diag.Pos{Line: p.Span.End.Line, Col: p.Span.End.Col - 1, Offset: p.Span.End.Offset - 1}
+		text := ", .."
+		if len(p.Fields) == 0 {
+			text = ".."
+		}
+		d.WithFix("ignore the other fields with `..`", diag.Span{File: p.Span.File, Start: at, End: at}, text)
+	}
+}
+
+// recordCtor is the name of the single constructor of a record in the
+// exhaustiveness analysis; it encodes the field names for witnesses.
+func recordCtor(ti *TypeInfo) string {
+	names := make([]string, len(ti.Fields))
+	for i, f := range ti.Fields {
+		names[i] = f.Name
+	}
+	return "{" + ti.Name + "|" + strings.Join(names, ",") + "}"
 }
 
 // ---------- exhaustiveness (Maranget-style usefulness) ----------
@@ -212,6 +311,27 @@ func (c *Checker) toSpats(p syntax.Pattern, t Type) []spat {
 		var out []spat
 		for _, combo := range product(args) {
 			out = append(out, spat{ctor: p.Name, args: combo})
+		}
+		return out
+	case *syntax.RecordPat:
+		ti := c.findRecord(p.Module, p.Name)
+		if ti == nil {
+			return []spat{wild}
+		}
+		ctor := recordCtor(ti)
+		ats := argTypes(t, ctor, len(ti.Fields), c)
+		args := make([][]spat, len(ti.Fields))
+		for i, f := range ti.Fields {
+			args[i] = []spat{wild}
+			for _, fp := range p.Fields {
+				if fp.Name == f.Name {
+					args[i] = c.toSpats(fp.Pat, ats[i])
+				}
+			}
+		}
+		var out []spat
+		for _, combo := range product(args) {
+			out = append(out, spat{ctor: ctor, args: combo})
 		}
 		return out
 	case *syntax.ListPat:
@@ -289,6 +409,9 @@ func signature(t Type) []ctorSig {
 		}
 		return out
 	}
+	if tc.Info != nil && tc.Info.IsRecord {
+		return []ctorSig{{recordCtor(tc.Info), len(tc.Info.Fields)}}
+	}
 	switch tc.Name {
 	case "Bool":
 		return []ctorSig{{"true", 0}, {"false", 0}}
@@ -303,6 +426,17 @@ func argTypes(t Type, ctor string, arity int, c *Checker) []Type {
 	tc, _ := Prune(t).(*TCon)
 	if tc != nil && tc.Info == nil && tc.Name == "List" && ctor == "::" {
 		return []Type{tc.Args[0], t}
+	}
+	if tc != nil && tc.Info != nil && tc.Info.IsRecord && ctor == recordCtor(tc.Info) {
+		m := map[int]Type{}
+		for i, g := range tc.Info.TParams {
+			m[g.ID] = tc.Args[i]
+		}
+		out := make([]Type, len(tc.Info.Fields))
+		for i, f := range tc.Info.Fields {
+			out[i] = Subst(f.Type, m)
+		}
+		return out
 	}
 	if tc != nil && tc.Info != nil {
 		for _, ci := range tc.Info.Ctors {
@@ -466,6 +600,16 @@ func showSpat(p spat) string {
 			elems = append(elems, ".._")
 		}
 		return "[" + strings.Join(elems, ", ") + "]"
+	case p.ctor[0] == '{':
+		name, fields, _ := strings.Cut(strings.Trim(p.ctor, "{}"), "|")
+		names := strings.Split(fields, ",")
+		parts := make([]string, len(p.args))
+		for i, a := range p.args {
+			if i < len(names) {
+				parts[i] = names[i] + ": " + showSpat(a)
+			}
+		}
+		return name + "{" + strings.Join(parts, ", ") + "}"
 	case p.ctor[0] == '#':
 		return p.ctor[1:]
 	case p.ctor[0] == '$':

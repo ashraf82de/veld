@@ -621,6 +621,31 @@ func (c *compiler) pattern(p syntax.Pattern) matcher {
 			}
 			return true
 		}
+	case *syntax.RecordPat:
+		ti := c.recordType(p.Module, p.Name)
+		type sub struct {
+			i int
+			m matcher
+		}
+		var subs []sub
+		for _, fp := range p.Fields {
+			_, i, _ := ti.Field(fp.Name)
+			if m := c.pattern(fp.Pat); m != nil {
+				subs = append(subs, sub{i, m})
+			}
+		}
+		if len(subs) == 0 {
+			return nil
+		}
+		return func(f *frame, x Value) bool {
+			r := x.(*Record)
+			for _, s := range subs {
+				if !s.m(f, r.Fields[s.i]) {
+					return false
+				}
+			}
+			return true
+		}
 	case *syntax.ListPat:
 		elems := make([]matcher, len(p.Elems))
 		for i, a := range p.Elems {

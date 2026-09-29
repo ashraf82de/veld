@@ -863,3 +863,14 @@ func (c *compiler) floatExpr(e syntax.Expr) fcode {
 	}
 	return func(f *frame) float64 { return g(f).(float64) }
 }
+
+// recordType resolves a record type by (optional) module qualifier.
+func (c *compiler) recordType(module, name string) *types.TypeInfo {
+	if module != "" {
+		return c.mod.Imports[module].Types[name]
+	}
+	if ti := c.mod.Types[name]; ti != nil {
+		return ti
+	}
+	return c.in.Prog.Prelude.Types[name]
+}

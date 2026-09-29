@@ -1497,9 +1497,40 @@ func (p *parser) ctorPatRest(module, name string, start diag.Pos) Pattern {
 		p.expect(RPAREN, "to close the constructor pattern")
 	}
 	if p.at(LBRACE) {
-		p.errAt(p.peek().Span, "E124", "record patterns are not supported; bind the value and access fields with `.`")
-		panic(bailout{})
+		return p.recordPatRest(module, name, start)
 	}
 	cp.Span = p.span(start)
 	return cp
+}
+
+// recordPatRest parses `{field, field: pattern, ..}` after a record's name.
+func (p *parser) recordPatRest(module, name string, start diag.Pos) Pattern {
+	p.next() // {
+	rp := &RecordPat{Module: module, Name: name}
+	for p.skipNewlines(); !p.at(RBRACE); p.skipNewlines() {
+		if p.at(DOTDOT) {
+			p.next()
+			rp.HasRest = true
+			p.skipNewlines()
+			break
+		}
+		t := p.expectIdent("as a record field name")
+		fp := &FieldPat{Name: t.Text, Span: t.Span}
+		if p.at(COLON) {
+			p.next()
+			fp.Pat = p.parsePattern()
+			fp.Span = diag.Join(t.Span, fp.Pat.Sp())
+		} else {
+			fp.Pat = &BindPat{Name: t.Text, Span: t.Span}
+			fp.Shorthand = true
+		}
+		rp.Fields = append(rp.Fields, fp)
+		if p.skipNewlines(); !p.at(COMMA) {
+			break
+		}
+		p.next()
+	}
+	p.expect(RBRACE, "to close the record pattern")
+	rp.Span = p.span(start)
+	return rp
 }

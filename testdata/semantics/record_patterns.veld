@@ -1,0 +1,58 @@
+use std.list
+
+record User
+  name: Str
+  age: Int
+  admin: Bool
+end record
+
+record Wrapper[T]
+  inner: T
+  label: Str
+end record
+
+type Event
+  case Login(user: User)
+  case Logout(user: User)
+  case Ping
+end type
+
+fn describe(e: Event) -> Str
+  match e
+    case Login(User{name, admin: true, ..}) => "admin ${name}"
+    case Login(User{name, ..}) => "user ${name}"
+    case Logout(User{name: who, age: _, admin: _}) => "bye ${who}"
+    case Ping => "ping"
+  end match
+end fn
+
+fn label_of(w: Wrapper[Int]) -> Str
+  match w
+    case Wrapper{inner: 0, label} => "zero ${label}"
+    case Wrapper{inner, label} => "${label}=${inner}"
+  end match
+end fn
+
+fn adult_names(users: List[User]) -> List[Str]
+  list.flat_map(
+    users,
+    fn(u)
+      match u
+        case User{name, age, ..} if age >= 18 => [name]
+        case _ => []
+      end match
+    end fn,
+  )
+end fn
+
+test "record patterns"
+  let ada = User{name: "ada", age: 36, admin: true}
+  let bob = User{name: "bob", age: 12, admin: false}
+  expect describe(Login(ada)) == "admin ada"
+  expect describe(Login(bob)) == "user bob"
+  expect describe(Logout(bob)) == "bye bob"
+  expect describe(Ping) == "ping"
+  expect label_of(Wrapper{inner: 0, label: "x"}) == "zero x"
+  expect label_of(Wrapper{inner: 7, label: "y"}) == "y=7"
+  expect adult_names([ada, bob]) == ["ada"]
+end test

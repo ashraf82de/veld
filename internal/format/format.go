@@ -664,6 +664,23 @@ func Pattern(pt syntax.Pattern) string {
 			as = append(as, Pattern(a))
 		}
 		return strings.Join(as, " | ")
+	case *syntax.RecordPat:
+		s := pt.Name
+		if pt.Module != "" {
+			s = pt.Module + "." + s
+		}
+		var as []string
+		for _, f := range pt.Fields {
+			if b, ok := f.Pat.(*syntax.BindPat); ok && b.Name == f.Name {
+				as = append(as, f.Name)
+			} else {
+				as = append(as, f.Name+": "+Pattern(f.Pat))
+			}
+		}
+		if pt.HasRest {
+			as = append(as, "..")
+		}
+		return s + "{" + strings.Join(as, ", ") + "}"
 	case *syntax.ListPat:
 		var as []string
 		for _, a := range pt.Elems {

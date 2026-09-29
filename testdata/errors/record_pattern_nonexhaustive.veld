@@ -1,0 +1,12 @@
+# expect: E501
+record Point
+  x: Int
+  y: Int
+end record
+
+fn f(p: Point) -> Int
+  match p
+    case Point{x: 0, ..} => 0
+    case Point{y: 0, ..} => 1
+  end match
+end fn

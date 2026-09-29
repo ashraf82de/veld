@@ -1,0 +1,11 @@
+# expect: E511
+record User
+  name: Str
+  age: Int
+end record
+
+fn f(u: User) -> Str
+  match u
+    case User{nmae, ..} => nmae
+  end match
+end fn

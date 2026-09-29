@@ -194,6 +194,7 @@ _                     # anything
 name                  # bind
 42   -1   "text"   true                  # literals
 Some(x)   Rect(w, _)   shapes.Circle(r)  # constructors (all fields)
+User{name, age: 18, ..}                # records: list every field or end with `..`
 []   [a]   [a, b]   [first, ..rest]   [x, .._]    # lists
 "+" | "-"   Some(1 | 2)                  # alternatives (cannot bind names)
 case x if x > 0 => ...                   # guard

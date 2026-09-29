@@ -6,7 +6,6 @@ codes and failed tasks in `veld eval --json`, and issues labelled
 `veld-maintainer` agent keeps this file honest (see `docs/MAINTAINING.md`).
 
 ## Next: close gaps agents hit
-- [ ] Record patterns: `case User{name, ..}`.
 - [ ] `veld check --watch` and an LSP server (diagnostics, hover types, go to
       definition) for agent IDE integrations.
 - [ ] Exact exhaustiveness for list patterns with elements after `..rest`.
@@ -32,7 +31,7 @@ codes and failed tasks in `veld eval --json`, and issues labelled
 - [ ] Stability guarantee for syntax and diagnostic codes.
 
 ## Done
-- v0.2 (in progress, see CHANGELOG.md): in-place map updates; std.task.parallel_map; tail calls; linear string building; closure-compiling runtime with slot
+- v0.2 (in progress, see CHANGELOG.md): record patterns (RFC 0002); in-place map updates; std.task.parallel_map; tail calls; linear string building; closure-compiling runtime with slot
   variables and unboxed arithmetic; persistent List/Map (`internal/pds`) with
   O(1) slices and in-place updates for provably unshared lists; call depth
   100k; multi-value `match a, b` (RFC 0001); effects `proc` and `state`;

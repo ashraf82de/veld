@@ -169,9 +169,9 @@ func (c *compiler) expr0(e syntax.Expr) code {
 	case *syntax.FieldExpr:
 		return c.field(e)
 	case *syntax.CallExpr:
-		return c.call(e, nil)
+		return c.call(e, nil, c.tailOK && c.tailNodes[e])
 	case *syntax.PipeExpr:
-		return c.call(e.R, e.L)
+		return c.call(e.R, e.L, c.tailOK && c.tailNodes[e])
 	case *syntax.BinaryExpr:
 		return c.binary(e)
 	case *syntax.UnaryExpr:

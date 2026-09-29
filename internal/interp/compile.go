@@ -64,10 +64,14 @@ type compiler struct {
 	boxed    map[*syntax.LetStmt]bool
 	owned    map[*syntax.LetStmt]bool
 	noFreeze map[*syntax.Ident]bool
-	grew     bool
-	override map[syntax.Expr]code
-	exits    map[syntax.Node]int
-	fnName   string
+	// tailOK says calls in tail position may reuse the caller's Go frame; it is
+	// false for functions with `ensures`, which must run after the body.
+	tailOK    bool
+	tailNodes map[syntax.Expr]bool
+	grew      bool
+	override  map[syntax.Expr]code
+	exits     map[syntax.Node]int
+	fnName    string
 }
 
 // lookup resolves a variable, capturing it from enclosing function scopes if
@@ -148,7 +152,7 @@ func (in *Interp) withBoxing(mod *types.Module, build func(c *compiler)) {
 	boxed := map[*syntax.LetStmt]bool{}
 	owned := map[*syntax.LetStmt]bool{}
 	for pass := 0; pass < 6; pass++ {
-		c := &compiler{in: in, mod: mod, boxed: boxed, owned: owned, noFreeze: map[*syntax.Ident]bool{},
+		c := &compiler{in: in, mod: mod, boxed: boxed, owned: owned, noFreeze: map[*syntax.Ident]bool{}, tailNodes: map[syntax.Expr]bool{},
 			override: map[syntax.Expr]code{}, exits: map[syntax.Node]int{}}
 		build(c)
 		if !c.grew {
@@ -169,6 +173,10 @@ func (in *Interp) compileFn(mod *types.Module, fn *fnCode) {
 		fn.requires = nil
 		for _, r := range d.Requires {
 			fn.requires = append(fn.requires, c.contract(r))
+		}
+		c.tailOK = len(d.Ensures) == 0
+		if c.tailOK {
+			c.markTailBlock(d.Body)
 		}
 		fn.body = c.block(d.Body)
 		fn.ensures = nil

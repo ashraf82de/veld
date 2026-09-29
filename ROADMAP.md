@@ -6,7 +6,6 @@ codes and failed tasks in `veld eval --json`, and issues labelled
 `veld-maintainer` agent keeps this file honest (see `docs/MAINTAINING.md`).
 
 ## Next: close gaps agents hit
-- [ ] Tail calls, so loops written as recursion never hit the depth limit.
 - [ ] Map updates in place under the same ownership rule as lists
       (`set m = map.put(m, ...)` on a local `var`).
 - [ ] Record patterns: `case User{name, ..}`.
@@ -37,7 +36,7 @@ codes and failed tasks in `veld eval --json`, and issues labelled
 - [ ] Stability guarantee for syntax and diagnostic codes.
 
 ## Done
-- v0.2 (in progress, see CHANGELOG.md): closure-compiling runtime with slot
+- v0.2 (in progress, see CHANGELOG.md): tail calls; closure-compiling runtime with slot
   variables and unboxed arithmetic; persistent List/Map (`internal/pds`) with
   O(1) slices and in-place updates for provably unshared lists; call depth
   100k; multi-value `match a, b` (RFC 0001); effects `proc` and `state`;

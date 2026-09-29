@@ -1,0 +1,94 @@
+use std.list
+
+## Calls in tail position run in constant stack, so these would overflow the
+## 100,000-call limit if they nested.
+fn count_down(n: Int, acc: Int) -> Int
+  if n == 0
+    acc
+  else
+    count_down(n - 1, acc + 1)
+  end if
+end fn
+
+fn is_even(n: Int) -> Bool
+  if n == 0
+    true
+  else
+    is_odd(n - 1)
+  end if
+end fn
+
+fn is_odd(n: Int) -> Bool
+  if n == 0
+    false
+  else
+    is_even(n - 1)
+  end if
+end fn
+
+fn sum_list(xs: List[Int], acc: Int) -> Int
+  match xs
+    case [] => acc
+    case [first, ..rest] => sum_list(rest, acc + first)
+  end match
+end fn
+
+fn find_first_big(i: Int, limit: Int) -> Int
+  for j in [i, i + 1]
+    if j >= limit
+      return j
+    end if
+  end for
+  return find_first_big(i + 2, limit)
+end fn
+
+fn with_pipe(n: Int, acc: Int) -> Int
+  if n == 0
+    acc
+  else
+    n - 1 |> with_pipe(acc: acc + 2)
+  end if
+end fn
+
+## A function with `ensures` cannot reuse its frame (the check runs after the
+## body), but must still behave.
+fn checked(n: Int) -> Int
+  ensures result >= 0
+  if n <= 0
+    0
+  else
+    checked(n - 1) + 1
+  end if
+end fn
+
+## A callee with `requires` is checked on every tail call.
+fn positive(n: Int, acc: Int) -> Int
+  requires n >= 0
+  if n == 0
+    acc
+  else
+    positive(n - 1, acc + 1)
+  end if
+end fn
+
+test "tail recursion is constant stack"
+  expect count_down(1000000, 0) == 1000000
+  expect is_even(1000001) == false
+  expect is_odd(1000001)
+  expect sum_list(list_of(200000), 0) == 20000100000
+  expect find_first_big(0, 500000) == 500000
+  expect with_pipe(300000, 0) == 600000
+end test
+
+test "non-tail recursion and contracts still work"
+  expect checked(1000) == 1000
+  expect positive(500000, 0) == 500000
+end test
+
+fn list_of(n: Int) -> List[Int]
+  var out: List[Int] = []
+  for i in list.range(1, n + 1)
+    set out = list.push(out, i)
+  end for
+  out
+end fn

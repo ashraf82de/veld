@@ -83,7 +83,7 @@ func placeArgs(args []*syntax.Arg, names []string) (pos []int, n int) {
 	return pos, n
 }
 
-func (c *compiler) call(e *syntax.CallExpr, piped syntax.Expr) code {
+func (c *compiler) call(e *syntax.CallExpr, piped syntax.Expr, tail bool) code {
 	args := e.Args
 	if piped != nil {
 		args = append([]*syntax.Arg{{Value: piped}}, args...)
@@ -121,6 +121,18 @@ func (c *compiler) call(e *syntax.CallExpr, piped syntax.Expr) code {
 					vals[pos[i]] = a(f)
 				}
 				return f.th.callNative(fn, vals, site)
+			}
+		}
+		if tail {
+			return func(f *frame) Value {
+				th := f.th
+				nf := th.newFrame(fn.nslots)
+				for i, a := range argc {
+					nf.slots[pos[i]] = a(f)
+				}
+				f.tailFrame, f.tailFn, f.tailSite = nf, fn, site
+				f.ctl = ctlTail
+				return nil
 			}
 		}
 		switch len(argc) {
@@ -477,6 +489,11 @@ func (c *compiler) whileExpr(e *syntax.WhileExpr) code {
 }
 
 func (c *compiler) returnExpr(e *syntax.ReturnExpr) code {
+	if e.X != nil && c.tailOK && c.tailCallee(e.X) != nil {
+		// `return f(x)` is a tail call: the call code ends the function itself.
+		c.markTailExpr(e.X)
+		return c.expr(e.X)
+	}
 	if e.X == nil {
 		return func(f *frame) Value {
 			f.ret = Unit

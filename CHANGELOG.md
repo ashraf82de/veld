@@ -26,6 +26,12 @@ change lists how to migrate (`veld fix` carries the migration where possible).
   clean `R501` error.
 
 ### Added
+- Tail calls: a call to a user function in tail position (last expression of a
+  function, inside if/match branches, or `return f(x)`) reuses the caller's
+  frame, so tail-recursive loops and mutual recursion run in constant stack.
+  Frames of tail-called functions are omitted from stack traces; functions with
+  `ensures` are excluded.
+- `tests/fuzz_test.go`: fuzzers for the parser/formatter and the checker.
 - Multi-value `match a, b` with `case p, q` (RFC 0001): state machines and
   routers without nested matches or throw-away records. New diagnostics
   E507 (wrong number of patterns, with a fix), E508 (more than 4 values), E509

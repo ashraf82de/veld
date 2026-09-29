@@ -163,6 +163,7 @@ const (
 	ctlReturn
 	ctlBreak
 	ctlContinue
+	ctlTail // a call in tail position is pending in the frame (see invoke)
 )
 
 // frame holds the local variables of one function or lambda activation.
@@ -172,6 +173,11 @@ type frame struct {
 	slots []Value
 	ret   Value
 	ctl   ctl
+
+	// set with ctlTail: the frame, function and call site of the tail call
+	tailFrame *frame
+	tailFn    *fnCode
+	tailSite  *callSite
 }
 
 // Box is a heap cell for a `var` that a lambda captures, so that the lambda
@@ -301,27 +307,39 @@ func (th *Thread) callNative(fn *fnCode, args []Value, site *callSite) Value {
 // invoke runs fn's body in nf, whose parameter slots are already filled.
 func (th *Thread) invoke(fn *fnCode, nf *frame, site *callSite) Value {
 	th.push(fn.name, site)
-	for i := range fn.requires {
-		if !fn.requires[i].test(nf) {
-			th.contractFail("requires", &fn.requires[i], nf)
-		}
-	}
-	v := fn.body(nf)
-	if nf.ctl == ctlReturn {
-		v = nf.ret
-	}
-	if len(fn.ensures) > 0 {
-		nf.ctl = ctlNone
-		nf.slots[fn.resultSlot] = v
-		for i := range fn.ensures {
-			if !fn.ensures[i].test(nf) {
-				th.contractFail("ensures", &fn.ensures[i], nf)
+	for {
+		for i := range fn.requires {
+			if !fn.requires[i].test(nf) {
+				th.contractFail("requires", &fn.requires[i], nf)
 			}
 		}
+		v := fn.body(nf)
+		if nf.ctl == ctlTail {
+			// A call in tail position: run the callee in this Go frame, so
+			// tail-recursive loops use constant stack.
+			next, nfn, nsite := nf.tailFrame, nf.tailFn, nf.tailSite
+			nf.tailFrame = nil
+			th.freeFrame(nf)
+			fn, nf = nfn, next
+			th.stack[len(th.stack)-1] = stackEntry{name: fn.name, site: nsite}
+			continue
+		}
+		if nf.ctl == ctlReturn {
+			v = nf.ret
+		}
+		if len(fn.ensures) > 0 {
+			nf.ctl = ctlNone
+			nf.slots[fn.resultSlot] = v
+			for i := range fn.ensures {
+				if !fn.ensures[i].test(nf) {
+					th.contractFail("ensures", &fn.ensures[i], nf)
+				}
+			}
+		}
+		th.pop()
+		th.freeFrame(nf)
+		return v
 	}
-	th.pop()
-	th.freeFrame(nf)
-	return v
 }
 
 func (th *Thread) callClosure(c *Closure, args []Value, site *callSite) Value {

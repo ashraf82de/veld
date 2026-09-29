@@ -1,0 +1,20 @@
+use std.io
+use std.list
+use std.task
+
+fn fib(n: Int) -> Int
+  if n < 2
+    n
+  else
+    fib(n - 1) + fib(n - 2)
+  end if
+end fn
+
+fn main() -> Unit uses io
+  let results = task.parallel_map(list.repeat(30, times: 16), fn(n) => fib(n))
+  io.print("sum: ${list.sum(results)}")
+end fn
+
+test "parallel fib"
+  expect task.parallel_map([10, 11], fn(n) => fib(n)) == [55, 89]
+end test

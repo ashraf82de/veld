@@ -21,8 +21,10 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -536,6 +538,56 @@ func registerExt(def func(name string, f func(th *Thread, a []Value) Value)) {
 		return th.in.ok(Unit)
 	})
 
+	// ---- task ----
+	def("task.parallel_map", func(th *Thread, a []Value) Value {
+		items := a[0].(List).ToSlice()
+		if capturesVar(a[1], 0) {
+			th.nativeFail("task.parallel_map: the function captures a `var` variable; workers would race on it (pass values in with `let` or arguments)")
+		}
+		out := make([]Value, len(items))
+		workers := min(runtime.GOMAXPROCS(0), len(items))
+		var next int64 = -1
+		var stop atomic.Bool
+		var wg sync.WaitGroup
+		type failure struct {
+			index int
+			val   any
+		}
+		var mu sync.Mutex
+		var first *failure
+		site := th.site()
+		for w := 0; w < workers; w++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				wt := th.in.NewThread(th.mod)
+				i := -1
+				defer func() {
+					if r := recover(); r != nil {
+						stop.Store(true)
+						mu.Lock()
+						if first == nil || i < first.index {
+							first = &failure{i, r}
+						}
+						mu.Unlock()
+					}
+				}()
+				for !stop.Load() {
+					i = int(atomic.AddInt64(&next, 1))
+					if i >= len(items) {
+						return
+					}
+					out[i] = wt.callValue(a[1], []Value{items[i]}, site)
+				}
+			}()
+		}
+		wg.Wait()
+		if first != nil {
+			panic(first.val)
+		}
+		return NewList(out)
+	})
+
 	// ---- datetime ----
 	def("datetime.iso", func(th *Thread, a []Value) Value {
 		return time.UnixMilli(a[0].(int64)).UTC().Format(time.RFC3339Nano)
@@ -580,4 +632,19 @@ func jsonDecoder(s string) *json.Decoder {
 	dec := json.NewDecoder(strings.NewReader(s))
 	dec.UseNumber()
 	return dec
+}
+
+// capturesVar reports whether a function value captured a mutable `var` (a
+// *Box), directly or through a closure it captured.
+func capturesVar(v Value, depth int) bool {
+	c, ok := v.(*Closure)
+	if !ok || depth > 8 {
+		return false
+	}
+	for _, x := range c.caps {
+		if _, isBox := x.(*Box); isBox || capturesVar(x, depth+1) {
+			return true
+		}
+	}
+	return false
 }

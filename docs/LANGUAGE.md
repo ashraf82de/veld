@@ -261,6 +261,8 @@ Import with `use std.<name>`. `veld describe std.<name>` lists everything.
 - `csv`: parse, encode
 - `datetime`: iso, parse_iso, parts, from_parts, weekday (pure; timestamps
   are milliseconds since the epoch, UTC)
+- `task`: parallel_map (runs a pure function over a list on all cores; the
+  function must not capture a `var`)
 - `fs` (uses fs): read, write, append, exists, list_dir, make_dir, remove
 - `env` (uses env): args, get, exit
 - `time` (uses time): now_ms, sleep_ms

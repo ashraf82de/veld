@@ -15,8 +15,8 @@ codes and failed tasks in `veld eval --json`, and issues labelled
 - [ ] Explicit effect variables for higher-order functions stored in data.
 - [ ] More evals (17 today; target 50) spanning CLI tools, data processing,
       HTTP services and algorithms; a script that runs a model against them.
-- [ ] `std.task`: structured concurrency (spawn, await, parallel map) with
-      captured `var`s rejected at check time.
+- [ ] More of `std.task`: spawn/await and channels; reject captured `var`s at
+      check time instead of at run time.
 - [ ] `std.sql`: an embedded relational store (pure Go, no dependencies).
 
 ## Speed and memory
@@ -34,7 +34,7 @@ codes and failed tasks in `veld eval --json`, and issues labelled
 - [ ] Stability guarantee for syntax and diagnostic codes.
 
 ## Done
-- v0.2 (in progress, see CHANGELOG.md): tail calls; linear string building; closure-compiling runtime with slot
+- v0.2 (in progress, see CHANGELOG.md): std.task.parallel_map; tail calls; linear string building; closure-compiling runtime with slot
   variables and unboxed arithmetic; persistent List/Map (`internal/pds`) with
   O(1) slices and in-place updates for provably unshared lists; call depth
   100k; multi-value `match a, b` (RFC 0001); effects `proc` and `state`;

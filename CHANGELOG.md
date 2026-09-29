@@ -26,6 +26,8 @@ change lists how to migrate (`veld fix` carries the migration where possible).
   clean `R501` error.
 
 ### Added
+- `std.task.parallel_map`: run a function over a list on all cores, results in
+  order; closures capturing a `var` are rejected at run time.
 - `set s = s + a + b` on a local `var` appends into a buffer instead of copying,
   so building a string in a loop is linear (60,000 appends: 3.1s to 0.27s).
   Reads still see immutable strings.

@@ -1,0 +1,35 @@
+# Parallelism. Values are immutable, so pure work can run on every core.
+
+## Applies f to every element on all available cores and returns the results in
+## the original order. If f fails at runtime, that error is reported (the
+## lowest failing index wins). f must not capture a `var` from the surrounding
+## function: workers would race on it, so that is a runtime error; pass values
+## in as arguments or `let` bindings instead. Use it when f is expensive.
+pub extern fn parallel_map[T, U](items: List[T], f: Fn(T) -> U) -> List[U]
+
+test "parallel_map"
+  expect parallel_map([1, 2, 3], fn(x) => x * x) == [1, 4, 9]
+  expect parallel_map([], fn(x) => x + 1) == []
+  let big = parallel_map(range_list(2000), fn(n) => n * 2)
+  expect big == doubled(2000)
+end test
+
+fn range_list(n: Int) -> List[Int]
+  var out: List[Int] = []
+  var i = 0
+  while i < n
+    set out = out + [i]
+    set i = i + 1
+  end while
+  out
+end fn
+
+fn doubled(n: Int) -> List[Int]
+  var out: List[Int] = []
+  var i = 0
+  while i < n
+    set out = out + [i * 2]
+    set i = i + 1
+  end while
+  out
+end fn

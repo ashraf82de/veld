@@ -119,7 +119,8 @@ evals/              tasks for measuring how well agents write Veld
 testdata/errors/    golden diagnostic cases
 testdata/semantics/ runtime behaviour tests
 bench/              benchmark programs
-.claude/            the veld-maintainer agent and its commands
+docs/maintenance/  durable ChatGPT maintenance and PR review task prompts
+.claude/            optional local Claude Code adapter and commands
 tests/              end-to-end test suite
 ```
 
@@ -153,10 +154,13 @@ v0.2 (in development): checker, closure-compiling runtime, standard library
 HTTP server and client, shared state, parallel map), formatter, test runner and
 agent tooling. See [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md).
 
-The repository is maintained by an agent as well as by people: issues are
-triaged automatically, fixes arrive as pull requests, and agent feedback
-(`veld report`, the *Agent feedback* issue form) drives the roadmap. See
-[docs/MAINTAINING.md](docs/MAINTAINING.md).
+The owner has configured ChatGPT/Codex maintenance through a connected GitHub
+app: a daily task handles issues and improvements, and a PR task reviews new
+pull requests. Verified changes can be merged by the maintainer. GitHub Actions
+independently checks Linux and Windows, plus nightly main health. These tasks
+are configured in ChatGPT, not installed by cloning the repository. Agent
+feedback (`veld report`, the *Agent feedback* issue form) drives the roadmap.
+See [docs/MAINTAINING.md](docs/MAINTAINING.md).
 
 Veld evolves continuously: changes are proposed as RFCs, measured against the
 eval suite, and must keep every test green. See [CONTRIBUTING.md](CONTRIBUTING.md).

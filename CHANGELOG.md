@@ -5,6 +5,15 @@ change lists how to migrate (`veld fix` carries the migration where possible).
 
 ## Unreleased (0.2.0)
 
+### Maintenance
+- Move repository maintenance to ChatGPT tasks using the connected GitHub app:
+  daily development/triage and event-triggered PR review, with delegated
+  merging after verification. Store portable task prompts in `docs/maintenance/`.
+- Remove the three Claude Actions workflows and their model API key dependency.
+  Keep nightly Linux/Windows CI, add manual dispatch, explicit read-only token
+  permissions, bounded jobs and cancellation of superseded checks.
+- Keep `.claude/` as an optional local adapter to the shared maintenance policy.
+
 ### Performance and memory
 - New runtime core: functions are compiled to trees of Go closures. Variables
   live in frame slots, call targets and constructors are resolved once,
@@ -38,9 +47,8 @@ change lists how to migrate (`veld fix` carries the migration where possible).
   issue link; `veld eval export` writes the eval tasks as JSON lines;
   `llms.txt`, `docs/FOR_AGENTS.md`, a Hugging Face dataset card
   (`huggingface/`) and outreach drafts (`docs/outreach/`, for a human to post).
-- `maintainer-daily` workflow: the maintainer agent improves, dogfoods and
-  refreshes onboarding material every day (commands `/improve`, `/dogfood`,
-  `/outreach`).
+- Maintenance playbooks for improvements, dogfooding and outreach; scheduled
+  execution now uses the ChatGPT tasks described above.
 - `std.task.parallel_map`: run a function over a list on all cores, results in
   order; closures capturing a `var` are rejected at run time.
 - `set s = s + a + b` on a local `var` appends into a buffer instead of copying,
@@ -68,9 +76,8 @@ change lists how to migrate (`veld fix` carries the migration where possible).
 - `case pattern =>` followed by a newline and an indented block is accepted
   (a common habit from other languages); `veld fmt` prints the canonical
   `case pattern` form.
-- Maintainer agent (`.claude/agents/veld-maintainer.md`), slash commands,
-  issue forms, PR template, labels, weekly maintenance workflow, release
-  workflow with cross-platform binaries, and `docs/MAINTAINING.md`.
+- Maintainer instructions, optional local slash commands, issue forms, PR
+  template, labels, cross-platform release workflow, and `docs/MAINTAINING.md`.
 - `testdata/semantics/`: runtime behaviour tests for control flow, closures,
   patterns, recursion and value semantics; `bench/`: benchmark programs.
 

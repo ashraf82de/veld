@@ -23,17 +23,36 @@ instructions, for every agent. See "Security model" below.
 1. Add the repository secret `ANTHROPIC_API_KEY` (Settings → Secrets → Actions).
 2. Create the labels: run the `labels` workflow (Actions → labels → Run
    workflow), or `gh label create` from `.github/labels.yml`.
-3. Protect `main`: require the `test` and `windows` checks, require PRs, forbid
-   force pushes. Agents open PRs; they cannot merge past this.
-4. Optional: to let the agent merge its own *safe* PRs (docs, tests, wording of
-   diagnostics, bug fixes without language impact) once CI is green, set the
-   repository variable `AGENT_AUTOMERGE=true` and enable "Allow auto-merge".
-   Language, syntax, effect and code-number changes are never auto-merged.
+3. Branch protection is optional: the agent merges under the merge policy, so do not
+   require reviews that only a human can give. Forbid force pushes.
 5. The daily agent runs on its own (`maintainer-daily`); pause it with the
    repository variable `AGENT_DAILY=false`. Outreach drafts in `docs/outreach/`
    are for a maintainer to publish; agents never post externally.
 6. Optional: install the Claude GitHub app so `@claude` mentions from
    maintainers work in issues and PRs.
+
+## Merge policy
+
+The maintainer agent merges what it judges ready; the owner has delegated that.
+A PR may be merged (squash, by the agent that is reviewing it) when ALL hold:
+
+1. It does not touch `.github/workflows/`, `SECURITY.md`, `.claude/settings.json`,
+   or anything that weakens the effect sandbox (`--deny`, effect checks).
+2. The full verification from "Definition of done" passed on the PR's head,
+   run by the agent itself (PRs created with the built-in `GITHUB_TOKEN` do not
+   trigger CI, so CI is not evidence for them; the agent's own run is) or CI is
+   green for PRs from people and Dependabot.
+3. A language change (syntax, semantics, effects, diagnostic code meanings)
+   has an RFC in `docs/rfcs/` with status `implemented`, evals or golden cases
+   that measure it, and an updated `docs/LANGUAGE.md`.
+4. Dependency or action version bumps: the new tag exists upstream and the diff
+   is only the bump.
+5. The agent has read the whole diff and can state in the merge comment what
+   changed and how it was verified.
+
+When any condition fails, leave the PR open with a comment saying which. CI also
+runs nightly on `main`, so a bad merge is caught the next day; the agent reverts
+(a new commit, never a force-push) anything that turns `main` red.
 
 ## Labels
 

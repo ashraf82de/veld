@@ -9,7 +9,7 @@ Use the `veld-maintainer` agent to run the weekly pass:
 2. Read the three newest examples as a model seeing Veld for the first time and
    list every stumble.
 3. Review open issues and PRs: close `needs-info` items quiet for 14+ days
-   (explain why, invite reopening), ping stale PRs once, merge nothing that
+   (explain why, invite reopening), ping stale PRs once, merge what the merge policy allows and nothing that
    needs a human decision.
 4. Pick at most one small, safe item from `ROADMAP.md` or the `agent-feedback`
    backlog and open a PR for it.

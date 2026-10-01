@@ -102,11 +102,12 @@ They are short and they are the source of truth; this file is only the summary.
 - Never print, log or commit secrets or tokens; never touch
   `.github/workflows/` or repository settings unless a maintainer asked for
   exactly that change in this session.
-- Never force-push, rewrite published history, delete branches you did not
-  create, or merge your own language/semantics changes. Open a PR and let CI and
-  a human maintainer decide. Docs, tests, diagnostics wording and pure bug fixes
-  may be merged by you only if the repository owner enabled auto-merge for
-  agent PRs (see `docs/MAINTAINING.md`) and CI is green.
+- Never force-push, rewrite published history, or delete branches you did not
+  create. You merge PRs (yours, Dependabot's, contributors') under the merge
+  policy in `docs/MAINTAINING.md`: workflow, settings and security files are never
+  yours to merge, language changes need an implemented RFC with measurements, and
+  you must have verified the head yourself. If a merge turns `main` red, revert
+  it with a new commit.
 - Run untrusted Veld programs only under `--deny`. Never pipe downloaded
   scripts into a shell.
 - If a task is ambiguous, risky, or a judgement call about the language's

@@ -67,6 +67,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          show_full_output: true
           branch_prefix: agent/
           prompt: |
             Use the veld-maintainer agent. Today's task is `${{ steps.pick.outputs.task }}`:
@@ -77,5 +78,6 @@ jobs:
             the repository for a human to publish.
           claude_args: |
             --max-turns 80
-            --allowedTools "Read,Grep,Glob,Write,Edit,Bash(go build:*),Bash(go vet:*),Bash(go test:*),Bash(gofmt:*),Bash(./veld check:*),Bash(./veld test:*),Bash(./veld fmt:*),Bash(./veld fix:*),Bash(./veld describe:*),Bash(./veld explain:*),Bash(./veld spec:*),Bash(./veld new:*),Bash(./veld report:*),Bash(./veld eval:*),Bash(./veld run --deny net,fs,env,time,rand,proc,state:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git checkout:*),Bash(git switch:*),Bash(git pull:*),Bash(git push origin agent/:*),Bash(gh issue view:*),Bash(gh issue list:*),Bash(gh issue create:*),Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh pr comment:*),Bash(gh pr merge:*),Bash(gh pr checks:*),Bash(gh pr diff:*),Bash(gh pr close:*),Bash(git revert:*),Bash(git merge:*)"
+            --model claude-sonnet-5-5
+            --allowedTools "Read,Grep,Glob,Write,Edit,Bash(go build:*),Bash(go vet:*),Bash(go test:*),Bash(gofmt:*),Bash(./veld check:*),Bash(./veld test:*),Bash(./veld fmt:*),Bash(./veld fix:*),Bash(./veld describe:*),Bash(./veld explain:*),Bash(./veld spec:*),Bash(./veld new:*),Bash(./veld report:*),Bash(./veld eval:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git checkout:*),Bash(git switch:*),Bash(git pull:*),Bash(git push origin agent/:*),Bash(gh issue view:*),Bash(gh issue list:*),Bash(gh issue create:*),Bash(gh issue comment:*),Bash(gh issue edit:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh pr comment:*),Bash(gh pr merge:*),Bash(gh pr checks:*),Bash(gh pr diff:*),Bash(gh pr close:*),Bash(git revert:*),Bash(git merge:*)"
             --disallowedTools "Bash(git push --force:*),Bash(git push -f:*),Bash(git reset --hard:*),Bash(curl:*),Bash(wget:*)"

@@ -20,16 +20,36 @@ instructions, for every agent. See "Security model" below.
 
 ## Setting it up (once)
 
-1. Add the repository secret `ANTHROPIC_API_KEY` (Settings → Secrets → Actions).
+1. Add a workspace-scoped Anthropic API key as the repository secret
+   `ANTHROPIC_API_KEY` (Settings → Secrets and variables → Actions).
 2. Create the labels: run the `labels` workflow (Actions → labels → Run
-   workflow), or `gh label create` from `.github/labels.yml`.
+   workflow), or `gh label create` from `.github/labels.tsv`.
 3. Branch protection is optional: the agent merges under the merge policy, so do not
    require reviews that only a human can give. Forbid force pushes.
-5. The daily agent runs on its own (`maintainer-daily`); pause it with the
+4. The daily agent runs on its own (`maintainer-daily`); pause it with the
    repository variable `AGENT_DAILY=false`. Outreach drafts in `docs/outreach/`
    are for a maintainer to publish; agents never post externally.
-6. Optional: install the Claude GitHub app so `@claude` mentions from
+5. Optional: install the Claude GitHub app so `@claude` mentions from
    maintainers work in issues and PRs.
+
+### Troubleshooting authentication
+
+If the Claude step fails with HTTP 400 and says the API key is not scoped to a
+workspace, replace `ANTHROPIC_API_KEY` with a workspace-scoped key. The error
+also permits an `anthropic-workspace-id` request header, but that requires
+configuring header forwarding in the runner; the workflows currently provide
+only the key. Never put keys in issues, commits, or troubleshooting output.
+
+After replacing the secret, rerun the failed job from GitHub Actions and check
+that the agent completes its task. A successful Veld build or CI run does not
+verify the agent's API authentication. Daily, weekly and issue-triggered
+workflows all use this secret.
+
+This failure was confirmed in
+[run 36912164656](https://github.com/ashraf82de/veld/actions/runs/36912164656):
+checkout, Go setup and compilation passed, then the API rejected the first
+model request. Retrying without changing the authentication configuration
+does not address that error.
 
 ## Merge policy
 

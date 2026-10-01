@@ -15,10 +15,11 @@ where strictness turns a runtime surprise into a compile error:
   canonical layout enforced by `veld fmt`
 - no null, no exceptions (`Option`, `Result` and `?`), no implicit conversions,
   no shadowing, immutable values
-- calls with three or more arguments must name them, so argument order cannot
-  be wrong
+- calls with three or more arguments must name all but the first argument,
+  reducing positional argument mix-ups
 - effects (`io fs net env time rand proc state`) are part of every signature and
-  enforced again at runtime, so `veld run --deny net,fs file.veld` is a sandbox
+  enforced again at runtime; `veld run --deny net,fs file.veld` denies network
+  and filesystem effects (other effects remain available)
 - exhaustive `match`, including `match state, event`, with the missing case
   inserted for you
 - a toolchain that speaks JSON: every diagnostic has a stable code, an exact
@@ -40,13 +41,16 @@ veld spec            # the guide, for the model's context
 veld new app && veld test app
 ```
 
-There are 24 programming tasks with hidden tests in the
-[Veld evals dataset](https://huggingface.co/datasets/ashraf82de/veld-evals)
+There are 24 programming tasks with tests and reference solutions in the
+[Veld evaluation suite](https://github.com/ashraf82de/veld/tree/main/evals/tasks)
 (state machines, routers, CSV and JSON processing, regex, an LRU cache, matrix
 math, shortest paths). Give a model the guide and a task prompt, let it use
 `veld check --json` and `veld fix`, and grade with `veld eval`. The report
 includes a histogram of the diagnostic codes the model triggered, which is the
-signal we use to decide what to change.
+signal we use to decide what to change. Keep the tests and reference solutions
+out of the model's prompt when measuring its performance. A Hub-ready export
+is in [huggingface/](https://github.com/ashraf82de/veld/tree/main/huggingface);
+add a Hub dataset link only after publication has been verified.
 
 ## What we would like from you
 
@@ -58,9 +62,8 @@ veld report your_file.veld -m "what went wrong" --feedback
 ```
 
 prints a link that opens the *Agent feedback* issue form with your program,
-diagnostics and environment pre-filled. The repository is triaged and maintained
-by an agent as well as by people: reports become eval tasks and better
-diagnostics quickly, and the changelog says what changed because of them.
+diagnostics and environment pre-filled. Reports help maintainers add regression
+tests, improve diagnostics, and choose the next language improvements.
 
 Useful details: the model, how many iterations it needed, which diagnostic was
 confusing, which standard-library function you expected to exist.

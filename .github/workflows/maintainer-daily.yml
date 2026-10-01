@@ -14,6 +14,8 @@ name: maintainer-daily
 on:
   schedule:
     - cron: "30 5 * * 1-6"
+  push:
+    branches: [agent-run]
   workflow_dispatch:
     inputs:
       task:
@@ -64,6 +66,7 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           branch_prefix: agent/
           prompt: |
             Use the veld-maintainer agent. Today's task is `${{ steps.pick.outputs.task }}`:

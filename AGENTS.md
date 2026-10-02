@@ -4,6 +4,9 @@ This repo implements Veld, a programming language designed for AI agents.
 
 - Read `CONTRIBUTING.md` (process and invariants) and `docs/DESIGN.md`
   (why things are the way they are) before changing the language.
+- For maintenance and PR merging, follow `docs/MAINTAINING.md`. The owner
+  delegates routine tested changes and merges to the maintainer; task prompts
+  live in `docs/maintenance/`.
 - The language reference for *writing Veld code* is `docs/LANGUAGE.md`
   (also printed by `go run ./cmd/veld spec`).
 - Build: `go build -o veld ./cmd/veld`. Go 1.22+, no third-party deps; keep it

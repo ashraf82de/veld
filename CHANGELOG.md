@@ -82,6 +82,9 @@ change lists how to migrate (`veld fix` carries the migration where possible).
   patterns, recursion and value semantics; `bench/`: benchmark programs.
 
 ### Fixed
+- `veld fix --stdout` now checks intermediate repairs in memory and leaves
+  source files untouched, including their modification times. In-place fixes
+  report final write failures instead of silently succeeding.
 - `veld fix` applied nothing when given an absolute Windows path.
 - Applying several identical fixes (for example one `use std.option` per use of
   a missing module) duplicated the edit.

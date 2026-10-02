@@ -393,14 +393,10 @@ func cmdFix(args []string) int {
 				}
 				contents[f] = string(b)
 			}
-			if err := os.WriteFile(f, []byte(contents[f]), 0o644); err != nil && flags["stdout"] != "true" {
-				fmt.Fprintln(os.Stderr, err)
-				return 2
-			}
 		}
 		last = nil
 		sources = map[string]string{}
-		for _, l := range loadGroups(files) {
+		for _, l := range loadGroupsWithSources(files, contents) {
 			last = append(last, l.Diags.Sorted()...)
 			for k, v := range l.Sources {
 				sources[k] = v
@@ -433,11 +429,14 @@ func cmdFix(args []string) int {
 			break
 		}
 	}
-	for f := range targets {
+	for _, f := range files {
 		if flags["stdout"] == "true" {
 			fmt.Print(contents[f])
 		} else {
-			os.WriteFile(f, []byte(contents[f]), 0o644)
+			if err := os.WriteFile(f, []byte(contents[f]), 0o644); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				return 2
+			}
 		}
 	}
 	remaining := 0
@@ -862,6 +861,10 @@ func expandFiles(paths []string) []string {
 
 // loadGroups loads files grouped by project root (see project.FindRoot).
 func loadGroups(files []string) []*project.Loaded {
+	return loadGroupsWithSources(files, nil)
+}
+
+func loadGroupsWithSources(files []string, sources map[string]string) []*project.Loaded {
 	groups := map[string][]string{}
 	var dirs []string
 	for _, f := range files {
@@ -873,7 +876,7 @@ func loadGroups(files []string) []*project.Loaded {
 	}
 	var out []*project.Loaded
 	for _, d := range dirs {
-		out = append(out, project.Load(d, groups[d]))
+		out = append(out, project.LoadWithSources(d, groups[d], sources))
 	}
 	return out
 }

@@ -25,12 +25,13 @@ type Loaded struct {
 }
 
 type loader struct {
-	root    string
-	diags   *diag.List
-	sources map[string]string
-	order   []*types.Input
-	state   map[string]int // module path -> 1 visiting, 2 done
-	inputs  map[string]*types.Input
+	root      string
+	diags     *diag.List
+	sources   map[string]string
+	order     []*types.Input
+	state     map[string]int // module path -> 1 visiting, 2 done
+	inputs    map[string]*types.Input
+	overrides map[string]string // absolute local file path -> replacement source
 }
 
 // FindRoot returns the project root for a file: the nearest ancestor
@@ -77,7 +78,21 @@ func StdSource(name string) (string, bool) {
 // files must share a root directory (the directory of the first entry, or
 // root if non-empty).
 func Load(root string, entries []string) *Loaded {
+	return LoadWithSources(root, entries, nil)
+}
+
+// LoadWithSources checks a program using in-memory replacements for local
+// files. Keys may be relative or absolute file paths. Files not in sources
+// are read from disk; the embedded standard library is unchanged.
+func LoadWithSources(root string, entries []string, sources map[string]string) *Loaded {
 	l := &loader{diags: &diag.List{}, sources: map[string]string{}, state: map[string]int{}, inputs: map[string]*types.Input{}}
+	l.overrides = make(map[string]string, len(sources))
+	for file, src := range sources {
+		abs, err := filepath.Abs(file)
+		if err == nil {
+			l.overrides[abs] = src
+		}
+	}
 	if root == "" && len(entries) > 0 {
 		root = FindRoot(entries[0])
 	}
@@ -134,13 +149,17 @@ func (l *loader) visit(path string, from diag.Span) {
 		src, display = s, "std/"+strings.TrimPrefix(path, "std.")+".veld"
 	} else {
 		fp := filepath.Join(l.root, filepath.FromSlash(strings.ReplaceAll(path, ".", "/"))+".veld")
-		b, err := os.ReadFile(fp)
-		if err != nil {
-			l.diags.Errorf("E603", from, "cannot find module `%s` (looked for %s)", path, fp)
-			l.state[path] = 2
-			return
+		if replacement, ok := l.overrides[fp]; ok {
+			src = replacement
+		} else {
+			b, err := os.ReadFile(fp)
+			if err != nil {
+				l.diags.Errorf("E603", from, "cannot find module `%s` (looked for %s)", path, fp)
+				l.state[path] = 2
+				return
+			}
+			src = string(b)
 		}
-		src = string(b)
 		display = fp
 		if rel, err := filepath.Rel(mustCwd(), fp); err == nil && !strings.HasPrefix(rel, "..") {
 			display = rel

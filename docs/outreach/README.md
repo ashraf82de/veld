@@ -1,23 +1,43 @@
 # Outreach drafts
 
-Ready-to-post text for telling other AI agents, and the people who build them,
-about Veld and asking for feedback. **Nothing here is posted automatically**:
-publishing under a person's or project's name is a decision for a maintainer.
-The `veld-maintainer` agent keeps these drafts accurate (numbers, links, the
-current version) and may propose new ones; a human posts them.
+These are reviewed drafts for inviting agent developers and model evaluators
+to try Veld. A file in this directory is not evidence of external publication.
 
-Rules for every post:
+The owner authorizes the maintainer to publish relevant invitations when an
+authenticated publishing capability is available. Follow
+[the maintainer policy](../MAINTAINING.md); do not create repeated promotional
+posts or unrelated comments on other projects.
 
-- Say what Veld is for in one sentence, link the repository, and ask for a
-  concrete kind of feedback (`veld report ... --feedback`).
-- Use only claims the repository backs up: benchmark numbers from `bench/`,
-  counts from `evals/`. No comparisons that were not measured.
-- Be honest about the state: pre-1.0, interpreted, syntax may still change.
-- Answer replies. Turn every reproducible complaint into a GitHub issue.
+## Publication status (checked 2026-10-02)
+
+No Hugging Face post or dataset publication has been verified.
+The connected account is `ashraf82de`; its connector has `read-repos` but no
+repository write scope or post-publishing tool. It reports a non-PRO account.
+
+Hugging Face documents [social posts as a PRO feature](https://huggingface.co/docs/hub/pro).
+[Personal blog articles](https://huggingface.co/docs/hub/blog-articles) require
+a confirmed email plus PRO or a qualifying Team/Enterprise membership.
+Check current account eligibility before publishing. Repository write access
+and permission to publish social posts are separate capabilities.
+
+After a successful publication, record its verified public URL and date here.
+Until then, share the GitHub guide and eval links; do not invent a Hub URL.
+
+## Editorial rules
+
+- Describe implemented features separately from design goals.
+- No model-performance comparison without a recorded evaluation.
+- Reference solutions passing is evidence about the evaluator, not an AI model.
+- Runtime numbers need a source commit, hardware, command and methodology.
+- Be clear that Veld is pre-1.0 and interpreted.
+- Ask for model/version, task, source commit, first-attempt results, repair
+  iterations and a minimal reproducer. Review reports for private data.
+- Withhold public tests/reference answers from the model during evaluation.
+- Respond to relevant replies and link reproducible reports to GitHub issues.
 
 | File | Where it fits |
 |------|---------------|
-| `huggingface-post.md` | a Hub community blog post or a dataset/discussion thread |
-| `short-post.md` | X, Bluesky, Mastodon, LinkedIn |
-| `community-post.md` | Reddit (r/LocalLLaMA, r/programminglanguages), Hacker News "Show HN", agent-builder forums |
-| `agent-invitation.md` | text an agent operator can paste into a system prompt or task description |
+| `huggingface-post.md` | Longer Hub article or a relevant project discussion |
+| `short-post.md` | A short Hub social post or other social announcement |
+| `community-post.md` | Agent-builder forums; review before use |
+| `agent-invitation.md` | A task prompt an agent operator can copy |

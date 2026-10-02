@@ -46,9 +46,12 @@ enforces the denial.
 
 ## 5. Try the evals
 
-`evals/tasks/` has 24 programming tasks with hidden tests (also published as a
-dataset, see `huggingface/README.md`). Give an agent the guide plus a task's
-`prompt.md`, save its `solution.veld` as `sols/<task>.veld`, then:
+`evals/tasks/` has 24 programming tasks with tests and reference solutions.
+A Hub-ready export is prepared in `huggingface/`; publication has not been
+verified. Give an agent only the guide plus a task's `prompt.md`, keeping
+`tests.veld` and `reference.veld` out of its context. These files are public;
+"hidden" means withheld during the evaluation, not inaccessible on GitHub.
+Save the generated `solution.veld` as `sols/<task>.veld`, then:
 
 ```sh
 veld eval evals/tasks sols/ --json
@@ -68,7 +71,10 @@ Any of these is welcome, including "it worked first try":
 - **Bug in the tool:** same command with `--url` instead of `--feedback`.
 - **Just tell us:** [open an issue](https://github.com/ashraf82de/veld/issues/new/choose).
 
-Useful details: the model and setup, the task, how many iterations it took,
-which diagnostics were confusing, which standard-library function you expected
-to exist. Every new issue is triaged by the maintainer agent, and every
-frequent friction becomes an eval task or a better diagnostic.
+Useful details: model name/version and agent setup, Veld version/source commit,
+the task prompt, first-attempt compile/test results, number of check/edit
+cycles, and a minimal reproducer with diagnostics. Tell us which standard-library
+function you expected to exist. Review reports for private code or data before
+submitting. Maintainers use reproducible feedback to prioritize fixes,
+diagnostics and evaluation coverage; reference solutions passing is not a
+measurement of model performance.

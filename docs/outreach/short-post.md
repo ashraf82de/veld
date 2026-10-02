@@ -1,6 +1,9 @@
-Veld: a programming language designed for AI agents to write. Named block closers, no null or exceptions, effects in signatures, exhaustive match, and a compiler that returns JSON diagnostics with machine-applicable fixes (`veld fix`). Fast interpreter, tail calls, persistent collections.
+Building a coding agent? Try Veld on one small task and help us improve it.
 
-If your agent writes code, please try it and tell us where it struggled:
-`veld report file.veld -m "what went wrong" --feedback`
+Veld is an open-source, pre-1.0 language designed for agent-generated code: static types, explicit effects, named block endings, and JSON diagnostics with suggested fixes. Run `veld spec` for the guide.
 
-github.com/ashraf82de/veld  #AIagents #programminglanguages #opensource
+We want evidence: which model and agent did you use, did the first attempt pass, how many repairs did it need, and which diagnostic or missing API slowed it down? Successes and small reproducers are equally welcome. We are not claiming better model performance yet.
+
+Start here: https://github.com/ashraf82de/veld/blob/main/docs/FOR_AGENTS.md
+Try the 24 eval tasks: https://github.com/ashraf82de/veld/tree/main/evals/tasks
+Share feedback: https://github.com/ashraf82de/veld/issues/new/choose

@@ -6,6 +6,7 @@
 package tests
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -382,11 +383,17 @@ end fn
 	}
 }
 
-// TestDatasetInSync keeps huggingface/veld-evals.jsonl (the published dataset)
-// in step with evals/tasks: regenerate it with
+// TestDatasetInSync keeps the prepared Hub export in step with evals/tasks.
+// Regenerate it with:
 // `veld eval export evals/tasks > huggingface/veld-evals.jsonl`.
 func TestDatasetInSync(t *testing.T) {
-	dirs, _ := filepath.Glob("../evals/tasks/*")
+	dirs, err := filepath.Glob("../evals/tasks/*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(dirs) == 0 {
+		t.Fatal("no eval tasks found")
+	}
 	data, err := os.ReadFile("../huggingface/veld-evals.jsonl")
 	if err != nil {
 		t.Fatal(err)
@@ -396,13 +403,38 @@ func TestDatasetInSync(t *testing.T) {
 		t.Fatalf("dataset has %d tasks, evals/tasks has %d: regenerate huggingface/veld-evals.jsonl", len(lines), len(dirs))
 	}
 	for i, d := range dirs {
-		if !strings.Contains(lines[i], `"task_id":"`+filepath.Base(d)+`"`) {
-			t.Errorf("dataset line %d is not task %s: regenerate huggingface/veld-evals.jsonl", i+1, filepath.Base(d))
-		}
-		ref, _ := os.ReadFile(filepath.Join(d, "reference.veld"))
-		want := strings.ReplaceAll(strings.TrimSpace(string(ref)), "\r\n", "\n")
-		if !strings.Contains(lines[i], "reference") || want == "" {
-			t.Errorf("dataset line %d lacks a reference", i+1)
-		}
+		t.Run(filepath.Base(d), func(t *testing.T) {
+			var row map[string]string
+			if err := json.Unmarshal([]byte(lines[i]), &row); err != nil {
+				t.Fatalf("dataset line %d is not a string-valued JSON object: %v", i+1, err)
+			}
+			if row["task_id"] != filepath.Base(d) {
+				t.Errorf("dataset line %d has task_id %q, want %q", i+1, row["task_id"], filepath.Base(d))
+			}
+			if row["language"] != "veld" {
+				t.Errorf("dataset language = %q, want veld", row["language"])
+			}
+			for field, name := range map[string]string{
+				"prompt":    "prompt.md",
+				"tests":     "tests.veld",
+				"reference": "reference.veld",
+			} {
+				src, err := os.ReadFile(filepath.Join(d, name))
+				if err != nil {
+					t.Fatal(err)
+				}
+				got, ok := row[field]
+				if !ok {
+					t.Errorf("dataset line %d lacks %s", i+1, field)
+					continue
+				}
+				// Git may check out CRLF on Windows; preserve all other whitespace.
+				want := strings.ReplaceAll(string(src), "\r\n", "\n")
+				got = strings.ReplaceAll(got, "\r\n", "\n")
+				if got != want {
+					t.Errorf("dataset %s differs from %s: regenerate huggingface/veld-evals.jsonl", field, filepath.Join(d, name))
+				}
+			}
+		})
 	}
 }

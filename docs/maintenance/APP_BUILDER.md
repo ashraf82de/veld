@@ -1,11 +1,15 @@
 # Veld application builder task
 
-Status: prepared on 2026-10-02; **not scheduled**. The task service rejected
-creation from the active automation run. Create this task from a normal chat
-or the Scheduled interface, then update this status only after confirmation.
-Suggested name: **Build Veld applications**. Suggested cadence: daily around
-06:30 Europe/Berlin, before the language maintainer's morning pass. Each run
-continues the same product's durable backlog.
+Status: **scheduled and enabled**, confirmed on 2026-10-03 through the task
+service. **Build Veld applications** runs daily around 06:30 Europe/Berlin,
+starting 2026-10-04, before the language maintainer's morning pass. Each run
+continues the same product's durable backlog. Task creation is confirmed;
+no application build or successful task run is claimed yet.
+
+The task is external to this repository. Cloning the repository does not
+activate it. Manage its schedule and inspect run results in ChatGPT's
+Scheduled view. If recreating it, confirm GitHub access first and use the
+prompt below; avoid creating a duplicate enabled task.
 
 The owner requested substantial open-source applications and websites with
 ongoing maintenance and a feedback loop into the Veld language repository.

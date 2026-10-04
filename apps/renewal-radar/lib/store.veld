@@ -1,0 +1,61 @@
+use std.fs
+use std.json
+use lib.model
+
+pub fn load(path: Str) -> Result[List[model.Renewal], Str] uses fs
+  if not fs.exists(path)
+    if fs.exists(backup_path(path))
+      return read_items(backup_path(path))
+    end if
+    return Ok([])
+  end if
+  read_items(path)
+end fn
+
+pub fn save(path: Str, items: List[model.Renewal]) -> Result[Unit, Str] uses fs
+  let temporary = temp_path(path)
+  let backup = backup_path(path)
+  fs.write(temporary, model.encode_items(items))?
+  if fs.exists(path)
+    fs.copy(path, backup)?
+    fs.remove(path)?
+  end if
+  match fs.rename(temporary, path)
+    case Ok(_) => Ok(Unit)
+    case Err(e)
+      if fs.exists(backup) and not fs.exists(path)
+        let _ignored = fs.copy(backup, path)
+      end if
+      Err("could not replace '${path}': ${e}; backup retained at '${backup}'")
+  end match
+end fn
+
+pub fn backup_path(path: Str) -> Str
+  "${path}.bak"
+end fn
+
+fn temp_path(path: Str) -> Str
+  "${path}.tmp"
+end fn
+
+fn read_items(path: Str) -> Result[List[model.Renewal], Str] uses fs
+  let text = fs.read(path)?
+  let value = match json.parse(text)
+    case Ok(parsed) => parsed
+    case Err(e) => return Err("invalid JSON in '${path}': ${e}")
+  end match
+  model.parse_items(value)
+end fn
+
+test "save, backup, and recovery"
+  let path = "renewal_radar_store_test.json"
+  let first = model.Renewal{id: 1, name: "first", expires_ms: 10, owner: "", category: "", notes: ""}
+  let second = model.Renewal{id: 2, name: "second", expires_ms: 20, owner: "", category: "", notes: ""}
+  expect save(path, [first]) == Ok(Unit)
+  expect load(path) == Ok([first])
+  expect save(path, [first, second]) == Ok(Unit)
+  expect fs.exists(backup_path(path))
+  expect fs.remove(path) == Ok(Unit)
+  expect load(path) == Ok([first])
+  expect fs.remove(backup_path(path)) == Ok(Unit)
+end test

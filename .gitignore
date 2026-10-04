@@ -1,6 +1,9 @@
 /veld
 /veld.exe
 todos.json
+renewal-radar.json
+renewal-radar.json.bak
+renewal-radar.json.tmp
 *.test
 veld.exe
 *.exe

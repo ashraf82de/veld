@@ -37,9 +37,9 @@ jobs:
       - name: build
         run: go build -o veld ./cmd/veld
       - name: veld fmt --check
-        run: ./veld fmt --check std examples evals testdata/semantics bench
-      - name: veld test (std, examples, semantics)
-        run: ./veld test std examples testdata/semantics
+        run: ./veld fmt --check std examples evals testdata/semantics bench apps/renewal-radar
+      - name: veld test (std, examples, semantics, apps)
+        run: ./veld test std examples testdata/semantics apps/renewal-radar
       - name: eval references
         run: |
           mkdir -p /tmp/refs
@@ -68,5 +68,5 @@ jobs:
         shell: bash
         run: |
           go build -o veld.exe ./cmd/veld
-          ./veld.exe fmt --check std examples evals testdata/semantics bench
-          ./veld.exe test std examples testdata/semantics
+          ./veld.exe fmt --check std examples evals testdata/semantics bench apps/renewal-radar
+          ./veld.exe test std examples testdata/semantics apps/renewal-radar

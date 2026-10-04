@@ -1,0 +1,184 @@
+use std.datetime
+use std.json
+use std.list
+use std.math
+use std.str
+
+pub record Renewal
+  id: Int
+  name: Str
+  expires_ms: Int
+  owner: Str
+  category: Str
+  notes: Str
+end record
+
+pub fn to_json(item: Renewal) -> Json
+  json.object(
+    {
+      "id": json.int(item.id),
+      "name": json.string(item.name),
+      "expires_ms": json.int(item.expires_ms),
+      "owner": json.string(item.owner),
+      "category": json.string(item.category),
+      "notes": json.string(item.notes),
+    },
+  )
+end fn
+
+pub fn from_json(value: Json) -> Result[Renewal, Str]
+  let id = required_int(value, "id")?
+  let name = required_str(value, "name")?
+  let expires_ms = required_int(value, "expires_ms")?
+  let owner = required_str(value, "owner")?
+  let category = required_str(value, "category")?
+  let notes = required_str(value, "notes")?
+  if id <= 0
+    return Err("renewal id must be greater than zero")
+  end if
+  if str.trim(name) == ""
+    return Err("renewal name must not be empty")
+  end if
+  Ok(
+    Renewal{id: id, name: name, expires_ms: expires_ms, owner: owner, category: category, notes: notes},
+  )
+end fn
+
+pub fn parse_items(value: Json) -> Result[List[Renewal], Str]
+  match value
+    case JArr(values)
+      var items: List[Renewal] = []
+      for entry in values
+        let item = from_json(entry)?
+        if list.any(items, fn(existing) => existing.id == item.id)
+          return Err("duplicate renewal id ${item.id}")
+        end if
+        set items = list.push(items, item)
+      end for
+      Ok(items)
+    case _ => Err("data file must contain a JSON array")
+  end match
+end fn
+
+pub fn encode_items(items: List[Renewal]) -> Str
+  json.pretty(json.array(list.map(items, to_json))) + "\n"
+end fn
+
+pub fn parse_expiry(text: Str) -> Result[Int, Str]
+  let normalized = if str.len(text) == 10
+    "${text}T23:59:59Z"
+  else
+    text
+  end if
+  match datetime.parse_iso(normalized)
+    case Some(ms) => Ok(ms)
+    case None => Err("invalid expiry '${text}'; use YYYY-MM-DD or RFC 3339")
+  end match
+end fn
+
+pub fn date_text(ms: Int) -> Str
+  let iso = datetime.iso(ms)
+  slice_date(iso)
+end fn
+
+pub fn days_until(item: Renewal, now_ms: Int) -> Int
+  let delta = item.expires_ms - now_ms
+  if delta >= 0
+    delta / 86400000
+  else
+    -((-delta + 86399999) / 86400000)
+  end if
+end fn
+
+pub fn status(item: Renewal, now_ms: Int) -> Str
+  let days = days_until(item, now_ms)
+  if days < 0
+    "OVERDUE ${-days}d"
+  else if days == 0
+    "DUE TODAY"
+  else if days <= 30
+    "DUE ${days}d"
+  else
+    "OK ${days}d"
+  end if
+end fn
+
+pub fn next_id(items: List[Renewal]) -> Int
+  match list.max(list.map(items, fn(item) => item.id))
+    case Some(id) => id + 1
+    case None => 1
+  end match
+end fn
+
+pub fn sorted(items: List[Renewal]) -> List[Renewal]
+  list.sort_by(items, key: fn(item) => item.expires_ms)
+end fn
+
+fn required_str(value: Json, key: Str) -> Result[Str, Str]
+  match json.get(value, key)
+    case Some(JStr(text)) => Ok(text)
+    case _ => Err("field '${key}' must be a string")
+  end match
+end fn
+
+fn required_int(value: Json, key: Str) -> Result[Int, Str]
+  match json.get(value, key)
+    case Some(JNum(number))
+      let integer = math.round(number)
+      if math.to_float(integer) != number
+        Err("field '${key}' must be an integer")
+      else
+        Ok(integer)
+      end if
+    case Some(_) => Err("field '${key}' must be an integer")
+    case None => Err("missing field '${key}'")
+  end match
+end fn
+
+fn slice_date(text: Str) -> Str
+  str.slice(text, start: 0, stop: 10)
+end fn
+
+test "date parsing and status boundaries"
+  let item = Renewal{id: 1, name: "domain", expires_ms: 86400000, owner: "ops", category: "domain", notes: ""}
+  expect parse_expiry("1970-01-02") == Ok(172799000)
+  expect days_until(item, 0) == 1
+  expect status(item, 0) == "DUE 1d"
+  expect status(item, 86400000) == "DUE TODAY"
+  expect status(item, 86400001) == "OVERDUE 1d"
+end test
+
+test "JSON round trip and validation"
+  let item = Renewal{
+    id: 3,
+    name: "support",
+    expires_ms: 1700000000000,
+    owner: "ashraf",
+    category: "contract",
+    notes: "annual",
+  }
+  expect from_json(to_json(item)) == Ok(item)
+  expect parse_items(json.array([to_json(item)])) == Ok([item])
+  expect from_json(json.object({})) == Err("missing field 'id'")
+  expect from_json(
+    json.object(
+      {
+        "id": json.number(1.5),
+        "name": json.string("bad"),
+        "expires_ms": json.int(10),
+        "owner": json.string(""),
+        "category": json.string(""),
+        "notes": json.string(""),
+      },
+    ),
+  ) == Err("field 'id' must be an integer")
+  expect parse_items(json.array([to_json(item), to_json(item)])) == Err("duplicate renewal id 3")
+end test
+
+test "ordering and ids"
+  let later = Renewal{id: 8, name: "later", expires_ms: 20, owner: "", category: "", notes: ""}
+  let earlier = Renewal{id: 2, name: "earlier", expires_ms: 10, owner: "", category: "", notes: ""}
+  expect sorted([later, earlier]) == [earlier, later]
+  expect next_id([later, earlier]) == 9
+  expect next_id([]) == 1
+end test

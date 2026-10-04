@@ -1,0 +1,198 @@
+use std.cli
+use std.env
+use std.fs
+use std.io
+use std.list
+use std.str
+use std.time
+use lib.model
+use lib.store
+
+fn data_path(parsed: cli.Parsed) -> Str
+  match cli.flag(parsed, "file")
+    case Some(path) => path
+    case None => "renewal-radar.json"
+  end match
+end fn
+
+fn flag_or(parsed: cli.Parsed, name: Str, fallback: Str) -> Str
+  match cli.flag(parsed, name)
+    case Some(value) => value
+    case None => fallback
+  end match
+end fn
+
+fn add(parsed: cli.Parsed, name: Str, expiry: Str) -> Result[Str, Str] uses fs
+  if str.trim(name) == ""
+    return Err("name must not be empty")
+  end if
+  let path = data_path(parsed)
+  let items = store.load(path)?
+  let item = model.Renewal{
+    id: model.next_id(items),
+    name: str.trim(name),
+    expires_ms: model.parse_expiry(expiry)?,
+    owner: flag_or(parsed, name: "owner", fallback: ""),
+    category: flag_or(parsed, name: "category", fallback: ""),
+    notes: flag_or(parsed, name: "notes", fallback: ""),
+  }
+  store.save(path, list.push(items, item))?
+  Ok("added #${item.id} ${item.name}, expires ${model.date_text(item.expires_ms)}")
+end fn
+
+fn renew(parsed: cli.Parsed, id_text: Str, expiry: Str) -> Result[Str, Str] uses fs
+  let id = match str.to_int(id_text)
+    case Some(value) => value
+    case None => return Err("renewal id must be an integer")
+  end match
+  let expires_ms = model.parse_expiry(expiry)?
+  let path = data_path(parsed)
+  let items = store.load(path)?
+  if not list.any(items, fn(item) => item.id == id)
+    return Err("no renewal with id ${id}")
+  end if
+  let updated = list.map(
+    items,
+    fn(item)
+      if item.id == id
+        model.Renewal{..item, expires_ms: expires_ms}
+      else
+        item
+      end if
+    end fn,
+  )
+  store.save(path, updated)?
+  Ok("renewed #${id} through ${model.date_text(expires_ms)}")
+end fn
+
+fn remove(parsed: cli.Parsed, id_text: Str) -> Result[Str, Str] uses fs
+  let id = match str.to_int(id_text)
+    case Some(value) => value
+    case None => return Err("renewal id must be an integer")
+  end match
+  let path = data_path(parsed)
+  let items = store.load(path)?
+  let kept = list.filter(items, fn(item) => item.id != id)
+  if list.len(kept) == list.len(items)
+    return Err("no renewal with id ${id}")
+  end if
+  store.save(path, kept)?
+  Ok("removed #${id}")
+end fn
+
+fn show(parsed: cli.Parsed, id_text: Str, now_ms: Int) -> Result[Str, Str] uses fs
+  let id = match str.to_int(id_text)
+    case Some(value) => value
+    case None => return Err("renewal id must be an integer")
+  end match
+  let items = store.load(data_path(parsed))?
+  match list.find(items, fn(item) => item.id == id)
+    case None => Err("no renewal with id ${id}")
+    case Some(item) => Ok(
+      str.join(
+        [
+          "id: ${item.id}",
+          "name: ${item.name}",
+          "expires: ${model.date_text(item.expires_ms)}",
+          "status: ${model.status(item, now_ms)}",
+          "owner: ${display_value(item.owner)}",
+          "category: ${display_value(item.category)}",
+          "notes: ${display_value(item.notes)}",
+        ],
+        "\n",
+      ),
+    )
+  end match
+end fn
+
+fn list_text(items: List[model.Renewal], now_ms: Int) -> Str
+  if list.is_empty(items)
+    return "No renewals tracked."
+  end if
+  model.sorted(items)
+    |> list.map(fn(item) => row(item, now_ms))
+    |> str.join("\n")
+end fn
+
+fn row(item: model.Renewal, now_ms: Int) -> Str
+  "#${item.id} | ${model.date_text(item.expires_ms)} | ${model.status(item, now_ms)} | ${item.name} | owner=${display_value(item.owner)} | category=${display_value(item.category)}"
+end fn
+
+fn display_value(value: Str) -> Str
+  if value == ""
+    "-"
+  else
+    value
+  end if
+end fn
+
+fn due_text(items: List[model.Renewal], now_ms: Int, days: Int) -> Result[Str, Str]
+  if days < 0
+    return Err("--days must be zero or greater")
+  end if
+  let due = list.filter(items, fn(item) => model.days_until(item, now_ms) <= days)
+  Ok(list_text(due, now_ms))
+end fn
+
+fn usage() -> Str
+  str.join(
+    [
+      "Renewal Radar tracks contracts, licenses, subscriptions, certificates, and other expiries.",
+      "",
+      "Commands:",
+      "  add <name> <YYYY-MM-DD> [--owner=NAME] [--category=TYPE] [--notes=TEXT]",
+      "  list",
+      "  show <id>",
+      "  due [--days=30]",
+      "  renew <id> <YYYY-MM-DD>",
+      "  remove <id>",
+      "",
+      "All commands accept --file=PATH (default: renewal-radar.json).",
+    ],
+    "\n",
+  )
+end fn
+
+fn execute(args: List[Str], now_ms: Int) -> Result[Str, Str] uses fs
+  let parsed = cli.parse(args)
+  match parsed.positional
+    case ["add", name, expiry] => add(parsed, name: name, expiry: expiry)
+    case ["list"] => Ok(list_text(store.load(data_path(parsed))?, now_ms))
+    case ["show", id] => show(parsed, id_text: id, now_ms: now_ms)
+    case ["due"]
+      let days = match str.to_int(flag_or(parsed, name: "days", fallback: "30"))
+        case Some(value) => value
+        case None => return Err("--days must be an integer")
+      end match
+      due_text(store.load(data_path(parsed))?, now_ms: now_ms, days: days)
+    case ["renew", id, expiry] => renew(parsed, id_text: id, expiry: expiry)
+    case ["remove", id] => remove(parsed, id)
+    case ["help"] | [] => Ok(usage())
+    case _ => Err("unknown command or arguments\n\n${usage()}")
+  end match
+end fn
+
+fn main() -> Result[Unit, Str] uses env, fs, io, time
+  let output = execute(env.args(), time.now_ms())?
+  io.print(output)
+  Ok(Unit)
+end fn
+
+test "list and due rendering"
+  let now = 86400000
+  let due = model.Renewal{id: 2, name: "domain", expires_ms: now + 86400000, owner: "ops", category: "domain", notes: ""}
+  let later = model.Renewal{
+    id: 1,
+    name: "support",
+    expires_ms: now + 40 * 86400000,
+    owner: "",
+    category: "contract",
+    notes: "",
+  }
+  expect list_text([later, due], now) == "#2 | 1970-01-03 | DUE 1d | domain | owner=ops | category=domain\n#1 | 1970-02-11 | OK 40d | support | owner=- | category=contract"
+  expect due_text([later, due], now_ms: now, days: 30) == Ok("#2 | 1970-01-03 | DUE 1d | domain | owner=ops | category=domain")
+  expect due_text([later], now_ms: now, days: 30) == Ok("No renewals tracked.")
+  expect due_text([], now_ms: now, days: -1) == Err("--days must be zero or greater")
+  expect display_value("") == "-"
+  expect display_value("ops") == "ops"
+end test

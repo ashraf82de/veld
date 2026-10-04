@@ -44,7 +44,8 @@ establish adoption for Renewal Radar.
 
 - Add a named renewal with a validated expiry date and optional owner,
   category and notes.
-- List items in expiry order with overdue and upcoming status.
+- List items in expiry order with overdue and upcoming status, and view all
+  details for one stable ID.
 - Filter items due within a configurable number of days.
 - Renew or remove an item by stable integer ID.
 - Persist a portable JSON file and retain a previous-file backup on writes.

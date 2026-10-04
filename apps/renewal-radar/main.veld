@@ -80,6 +80,31 @@ fn remove(parsed: cli.Parsed, id_text: Str) -> Result[Str, Str] uses fs
   Ok("removed #${id}")
 end fn
 
+fn show(parsed: cli.Parsed, id_text: Str, now_ms: Int) -> Result[Str, Str] uses fs
+  let id = match str.to_int(id_text)
+    case Some(value) => value
+    case None => return Err("renewal id must be an integer")
+  end match
+  let items = store.load(data_path(parsed))?
+  match list.find(items, fn(item) => item.id == id)
+    case None => Err("no renewal with id ${id}")
+    case Some(item) => Ok(
+      str.join(
+        [
+          "id: ${item.id}",
+          "name: ${item.name}",
+          "expires: ${model.date_text(item.expires_ms)}",
+          "status: ${model.status(item, now_ms)}",
+          "owner: ${display_value(item.owner)}",
+          "category: ${display_value(item.category)}",
+          "notes: ${display_value(item.notes)}",
+        ],
+        "\n",
+      ),
+    )
+  end match
+end fn
+
 fn list_text(items: List[model.Renewal], now_ms: Int) -> Str
   if list.is_empty(items)
     return "No renewals tracked."
@@ -90,17 +115,15 @@ fn list_text(items: List[model.Renewal], now_ms: Int) -> Str
 end fn
 
 fn row(item: model.Renewal, now_ms: Int) -> Str
-  let owner = if item.owner == ""
+  "#${item.id} | ${model.date_text(item.expires_ms)} | ${model.status(item, now_ms)} | ${item.name} | owner=${display_value(item.owner)} | category=${display_value(item.category)}"
+end fn
+
+fn display_value(value: Str) -> Str
+  if value == ""
     "-"
   else
-    item.owner
+    value
   end if
-  let category = if item.category == ""
-    "-"
-  else
-    item.category
-  end if
-  "#${item.id} | ${model.date_text(item.expires_ms)} | ${model.status(item, now_ms)} | ${item.name} | owner=${owner} | category=${category}"
 end fn
 
 fn due_text(items: List[model.Renewal], now_ms: Int, days: Int) -> Result[Str, Str]
@@ -119,6 +142,7 @@ fn usage() -> Str
       "Commands:",
       "  add <name> <YYYY-MM-DD> [--owner=NAME] [--category=TYPE] [--notes=TEXT]",
       "  list",
+      "  show <id>",
       "  due [--days=30]",
       "  renew <id> <YYYY-MM-DD>",
       "  remove <id>",
@@ -134,6 +158,7 @@ fn execute(args: List[Str], now_ms: Int) -> Result[Str, Str] uses fs
   match parsed.positional
     case ["add", name, expiry] => add(parsed, name: name, expiry: expiry)
     case ["list"] => Ok(list_text(store.load(data_path(parsed))?, now_ms))
+    case ["show", id] => show(parsed, id_text: id, now_ms: now_ms)
     case ["due"]
       let days = match str.to_int(flag_or(parsed, name: "days", fallback: "30"))
         case Some(value) => value
@@ -168,4 +193,6 @@ test "list and due rendering"
   expect due_text([later, due], now_ms: now, days: 30) == Ok("#2 | 1970-01-03 | DUE 1d | domain | owner=ops | category=domain")
   expect due_text([later], now_ms: now, days: 30) == Ok("No renewals tracked.")
   expect due_text([], now_ms: now, days: -1) == Err("--days must be zero or greater")
+  expect display_value("") == "-"
+  expect display_value("ops") == "ops"
 end test

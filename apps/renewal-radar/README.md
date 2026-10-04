@@ -6,7 +6,7 @@ expiry date. The application logic, persistence, validation and tests are
 written in Veld.
 
 This first usable slice is a command-line application with durable JSON
-storage. It supports adding, listing, filtering, renewing and removing items.
+storage. It supports adding, listing, viewing, filtering, renewing and removing items.
 Every write keeps a `.bak` copy of the previous data file, and a missing primary
 file is recovered from that backup on the next read.
 
@@ -18,6 +18,7 @@ From the Veld repository root:
 go run ./cmd/veld run apps/renewal-radar/main.veld -- help
 go run ./cmd/veld run apps/renewal-radar/main.veld -- add "Example domain" 2027-01-15 --owner=ops --category=domain
 go run ./cmd/veld run apps/renewal-radar/main.veld -- list
+go run ./cmd/veld run apps/renewal-radar/main.veld -- show 1
 go run ./cmd/veld run apps/renewal-radar/main.veld -- due --days=60
 go run ./cmd/veld run apps/renewal-radar/main.veld -- renew 1 2028-01-15
 ```

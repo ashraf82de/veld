@@ -1,6 +1,7 @@
 use std.datetime
 use std.json
 use std.list
+use std.math
 use std.str
 
 pub record Renewal
@@ -32,7 +33,10 @@ pub fn from_json(value: Json) -> Result[Renewal, Str]
   let owner = required_str(value, "owner")?
   let category = required_str(value, "category")?
   let notes = required_str(value, "notes")?
-  if name == ""
+  if id <= 0
+    return Err("renewal id must be greater than zero")
+  end if
+  if str.trim(name) == ""
     return Err("renewal name must not be empty")
   end if
   Ok(
@@ -45,7 +49,11 @@ pub fn parse_items(value: Json) -> Result[List[Renewal], Str]
     case JArr(values)
       var items: List[Renewal] = []
       for entry in values
-        set items = list.push(items, from_json(entry)?)
+        let item = from_json(entry)?
+        if list.any(items, fn(existing) => existing.id == item.id)
+          return Err("duplicate renewal id ${item.id}")
+        end if
+        set items = list.push(items, item)
       end for
       Ok(items)
     case _ => Err("data file must contain a JSON array")
@@ -115,11 +123,14 @@ end fn
 
 fn required_int(value: Json, key: Str) -> Result[Int, Str]
   match json.get(value, key)
-    case Some(number)
-      match json.as_int(number)
-        case Some(integer) => Ok(integer)
-        case None => Err("field '${key}' must be an integer")
-      end match
+    case Some(JNum(number))
+      let integer = math.round(number)
+      if math.to_float(integer) != number
+        Err("field '${key}' must be an integer")
+      else
+        Ok(integer)
+      end if
+    case Some(_) => Err("field '${key}' must be an integer")
     case None => Err("missing field '${key}'")
   end match
 end fn
@@ -149,6 +160,19 @@ test "JSON round trip and validation"
   expect from_json(to_json(item)) == Ok(item)
   expect parse_items(json.array([to_json(item)])) == Ok([item])
   expect from_json(json.object({})) == Err("missing field 'id'")
+  expect from_json(
+    json.object(
+      {
+        "id": json.number(1.5),
+        "name": json.string("bad"),
+        "expires_ms": json.int(10),
+        "owner": json.string(""),
+        "category": json.string(""),
+        "notes": json.string(""),
+      },
+    ),
+  ) == Err("field 'id' must be an integer")
+  expect parse_items(json.array([to_json(item), to_json(item)])) == Err("duplicate renewal id 3")
 end test
 
 test "ordering and ids"

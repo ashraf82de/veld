@@ -2,7 +2,7 @@
 
 ## Current: usable local inventory
 
-- [x] Add, list, filter, renew and remove tracked items.
+- [x] Add, list, view, filter, renew and remove tracked items.
 - [x] Validate dates and persisted JSON.
 - [x] Sort by expiry and calculate overdue/upcoming status.
 - [x] Keep the previous data file as a backup.

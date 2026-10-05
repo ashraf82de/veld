@@ -1,0 +1,99 @@
+use std.csv
+use std.list
+use std.str
+use lib.model
+
+pub fn parse(text: Str, existing: List[model.Renewal]) -> Result[List[model.Renewal], Str]
+  let rows = match csv.parse(text)
+    case Ok(value) => value
+    case Err(error) => return Err("invalid CSV: ${error}")
+  end match
+  match rows
+    case [] => Err("CSV is empty; expected header name,expires,owner,category,notes")
+    case [header, ..data]
+      if header != ["name", "expires", "owner", "category", "notes"]
+        return Err("CSV header must be exactly: name,expires,owner,category,notes")
+      end if
+      if list.is_empty(data)
+        return Err("CSV has no data records")
+      end if
+      var imported: List[model.Renewal] = []
+      var record_number = 2
+      for row in data
+        let item = parse_row(row, id: model.next_id(existing) + list.len(imported), record_number: record_number)?
+        if list.any(existing + imported, fn(candidate) => same_identity(candidate, item))
+          return Err("CSV record ${record_number} duplicates an existing or earlier renewal")
+        end if
+        set imported = list.push(imported, item)
+        set record_number = record_number + 1
+      end for
+      Ok(imported)
+  end match
+end fn
+
+fn parse_row(row: List[Str], id: Int, record_number: Int) -> Result[model.Renewal, Str]
+  match row
+    case [name, expiry, owner, category, notes]
+      let clean_name = str.trim(name)
+      if clean_name == ""
+        return Err("CSV record ${record_number}: name must not be empty")
+      end if
+      let expires_ms = match model.parse_expiry(str.trim(expiry))
+        case Ok(value) => value
+        case Err(error) => return Err("CSV record ${record_number}: ${error}")
+      end match
+      Ok(
+        model.Renewal{
+          id: id,
+          name: clean_name,
+          expires_ms: expires_ms,
+          owner: str.trim(owner),
+          category: str.trim(category),
+          notes: str.trim(notes),
+        },
+      )
+    case _ => Err("CSV record ${record_number}: expected 5 columns, found ${list.len(row)}")
+  end match
+end fn
+
+fn same_identity(a: model.Renewal, b: model.Renewal) -> Bool
+  let same_name = str.lower(str.trim(a.name)) == str.lower(str.trim(b.name))
+  let same_expiry = a.expires_ms == b.expires_ms
+  let same_owner = str.lower(str.trim(a.owner)) == str.lower(str.trim(b.owner))
+  let same_category = str.lower(str.trim(a.category)) == str.lower(str.trim(b.category))
+  same_name and same_expiry and same_owner and same_category
+end fn
+
+test "imports valid records and assigns ids"
+  let existing = model.Renewal{id: 4, name: "existing", expires_ms: 10, owner: "", category: "", notes: ""}
+  let text = "name,expires,owner,category,notes\nDomain,2027-01-15,Ops,domain,primary\nSupport,2027-02-01,Ashraf,contract,annual\n"
+  match parse(text, [existing])
+    case Ok([first, second])
+      expect first.id == 5 and second.id == 6
+      expect first.name == "Domain" and first.owner == "Ops"
+      expect second.category == "contract" and second.notes == "annual"
+    case _ => expect false
+  end match
+end test
+
+test "validates CSV structure and values"
+  expect parse("wrong,expires,owner,category,notes\na,2027-01-01,,,\n", []) == Err("CSV header must be exactly: name,expires,owner,category,notes")
+  expect parse("name,expires,owner,category,notes\n", []) == Err("CSV has no data records")
+  expect parse("name,expires,owner,category,notes\na,2027-01-01\n", []) == Err("CSV record 2: expected 5 columns, found 2")
+  expect parse("name,expires,owner,category,notes\n,2027-01-01,,,\n", []) == Err("CSV record 2: name must not be empty")
+  expect parse("name,expires,owner,category,notes\na,tomorrow,,,\n", []) == Err("CSV record 2: invalid expiry 'tomorrow'; use YYYY-MM-DD or RFC 3339")
+end test
+
+test "rejects stored and incoming duplicates"
+  let existing = model.Renewal{
+    id: 1,
+    name: "Example Domain",
+    expires_ms: 1792108799000,
+    owner: "OPS",
+    category: "Domain",
+    notes: "old",
+  }
+  let header = "name,expires,owner,category,notes\n"
+  expect parse(header + " example domain ,2026-10-15,ops,domain,new\n", [existing]) == Err("CSV record 2 duplicates an existing or earlier renewal")
+  expect parse(header + "Domain,2027-01-15,ops,domain,one\nDOMAIN,2027-01-15,OPS,DOMAIN,two\n", []) == Err("CSV record 3 duplicates an existing or earlier renewal")
+end test

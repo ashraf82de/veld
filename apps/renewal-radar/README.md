@@ -6,7 +6,8 @@ expiry date. The application logic, persistence, validation and tests are
 written in Veld.
 
 This first usable slice is a command-line application with durable JSON
-storage. It supports adding, listing, viewing, filtering, renewing and removing items.
+storage. It supports adding, listing, viewing, filtering, renewing and removing
+items, plus validated CSV imports with duplicate detection.
 Every write keeps a `.bak` copy of the previous data file, and a missing primary
 file is recovered from that backup on the next read.
 
@@ -22,6 +23,29 @@ go run ./cmd/veld run apps/renewal-radar/main.veld -- show 1
 go run ./cmd/veld run apps/renewal-radar/main.veld -- due --days=60
 go run ./cmd/veld run apps/renewal-radar/main.veld -- renew 1 2028-01-15
 ```
+
+Import an existing inventory with this exact header:
+
+```csv
+name,expires,owner,category,notes
+Example domain,2027-01-15,ops,domain,primary domain
+Support contract,2027-02-01,Ashraf,contract,"Annual, auto-renewing"
+```
+
+The same data is available in [`sample.csv`](sample.csv) for a quick trial.
+
+Validate every record and check for duplicates without changing the data file,
+then run the import:
+
+```sh
+go run ./cmd/veld run apps/renewal-radar/main.veld -- import renewals.csv --dry-run
+go run ./cmd/veld run apps/renewal-radar/main.veld -- import renewals.csv
+```
+
+Records are duplicates when name, expiry, owner and category match after
+trimming whitespace and ignoring case for text fields. Notes may differ without
+making an otherwise identical renewal distinct. The import rejects the entire
+file on the first error and writes nothing until every record passes.
 
 The default data file is `renewal-radar.json` in the current directory. Use
 `--file=PATH` on any command to choose another location. Dates accept

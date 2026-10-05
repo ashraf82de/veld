@@ -7,10 +7,10 @@
 - [x] Sort by expiry and calculate overdue/upcoming status.
 - [x] Keep the previous data file as a backup.
 - [x] Complete a recorded builder usability trial with realistic synthetic data.
+- [x] Import CSV with dry-run validation and duplicate detection.
 
 ## Next: safer data exchange
 
-- CSV import with a dry-run validation report and duplicate detection.
 - JSON export suitable for versioned backups.
 - Category and owner filters.
 - Tests covering interrupted-write recovery on Linux and Windows.
@@ -22,6 +22,6 @@
 - Optional reminder adapters with explicit configuration and secret handling.
 - Container and upgrade documentation after the server workflow is verified.
 
-The next concrete action is a usability trial of the CLI followed by a focused
-CSV import slice. Language gaps found during that work should be reproduced and
-filed upstream with the exact Veld commit.
+The next concrete action is JSON export suitable for versioned backups unless
+CSV-import feedback reveals a higher-priority defect. Language gaps found during
+that work should be reproduced and filed upstream with the exact Veld commit.

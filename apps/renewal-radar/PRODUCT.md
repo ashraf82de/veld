@@ -47,6 +47,8 @@ establish adoption for Renewal Radar.
 - List items in expiry order with overdue and upcoming status, and view all
   details for one stable ID.
 - Filter items due within a configurable number of days.
+- Import a five-column CSV only after all records and duplicates validate, with
+  a dry-run mode that performs no write.
 - Renew or remove an item by stable integer ID.
 - Persist a portable JSON file and retain a previous-file backup on writes.
 - Reject malformed persisted data instead of silently discarding it.
@@ -57,5 +59,5 @@ establish adoption for Renewal Radar.
 - The current CLI supports one writer at a time.
 - It does not send notifications, authenticate users or encrypt sensitive
   content. Store only metadata suitable for a local plaintext file.
-- A browser interface, import/export and notification adapters remain roadmap
+- A browser interface, JSON export and notification adapters remain roadmap
   work and need their own verification.

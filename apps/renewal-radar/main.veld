@@ -5,6 +5,7 @@ use std.io
 use std.list
 use std.str
 use std.time
+use lib.importer
 use lib.model
 use lib.store
 
@@ -80,6 +81,26 @@ fn remove(parsed: cli.Parsed, id_text: Str) -> Result[Str, Str] uses fs
   Ok("removed #${id}")
 end fn
 
+fn import_file(parsed: cli.Parsed, csv_path: Str) -> Result[Str, Str] uses fs
+  let path = data_path(parsed)
+  let existing = store.load(path)?
+  let imported = importer.parse(fs.read(csv_path)?, existing)?
+  let count = list.len(imported)
+  if cli.has(parsed, "dry-run")
+    return Ok("validated ${count_text(count)}; no duplicates; data file unchanged")
+  end if
+  store.save(path, existing + imported)?
+  Ok("imported ${count_text(count)} into ${path}")
+end fn
+
+fn count_text(count: Int) -> Str
+  if count == 1
+    "1 renewal"
+  else
+    "${count} renewals"
+  end if
+end fn
+
 fn show(parsed: cli.Parsed, id_text: Str, now_ms: Int) -> Result[Str, Str] uses fs
   let id = match str.to_int(id_text)
     case Some(value) => value
@@ -144,6 +165,7 @@ fn usage() -> Str
       "  list",
       "  show <id>",
       "  due [--days=30]",
+      "  import <csv-path> [--dry-run]",
       "  renew <id> <YYYY-MM-DD>",
       "  remove <id>",
       "",
@@ -165,6 +187,7 @@ fn execute(args: List[Str], now_ms: Int) -> Result[Str, Str] uses fs
         case None => return Err("--days must be an integer")
       end match
       due_text(store.load(data_path(parsed))?, now_ms: now_ms, days: days)
+    case ["import", csv_path] => import_file(parsed, csv_path)
     case ["renew", id, expiry] => renew(parsed, id_text: id, expiry: expiry)
     case ["remove", id] => remove(parsed, id)
     case ["help"] | [] => Ok(usage())
@@ -195,4 +218,6 @@ test "list and due rendering"
   expect due_text([], now_ms: now, days: -1) == Err("--days must be zero or greater")
   expect display_value("") == "-"
   expect display_value("ops") == "ops"
+  expect count_text(1) == "1 renewal"
+  expect count_text(2) == "2 renewals"
 end test

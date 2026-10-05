@@ -5,10 +5,11 @@
 - Active product: Renewal Radar.
 - Application location: `apps/renewal-radar/` in `ashraf82de/veld`.
 - Initial Veld base: `0a20f1cf1581d0c43d7e6fe732ba37a28d1f3cd9`.
-- Current state: first CLI vertical slice passes local verification and awaits
-  hosted Linux and Windows CI.
-- Next action: implement CSV import as one focused change unless hosted CI or
-  user feedback exposes a higher-priority defect.
+- CSV import Veld base: `70fd5aebfcbb7f7b753e44ee80ea66d57fb9569a`.
+- Current state: the CLI supports its local inventory workflow and validated CSV
+  import with duplicate detection and dry-run mode.
+- Next action: add JSON export for versioned backups unless user feedback
+  exposes a higher-priority defect.
 - Upstream issues: none filed. No compiler or language defect has yet been
   reproduced by this application.
 
@@ -53,3 +54,19 @@ ten unnamed-argument errors and one unused-binding warning. `veld fix` repaired
 all unnamed arguments; two small name edits cleared the rest. The second check
 passed, and five application tests passed. No compiler or language defect was
 reproduced, so no upstream issue was filed.
+
+## Recorded import trial: 2026-10-05
+
+The builder imported realistic synthetic domain and support-contract records
+from CSV after first running `--dry-run`. The dry run left the data file absent;
+the real import wrote both records, preserved an existing record when tested,
+and the list command showed the combined inventory in expiry order. Invalid
+headers, column counts, names, dates and duplicates were rejected by tests.
+
+This is an implementation trial rather than external adoption. The first check
+reported three `E104` errors because a boolean expression continued on new
+lines beginning with `and`; naming the four boolean parts cleared the errors in
+one edit. The checker, eight application tests and the complete local repository
+verification then passed. No compiler or language defect was reproduced, so no
+upstream issue was filed. Hosted Linux and Windows checks remain required before
+merging this slice.

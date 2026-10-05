@@ -122,6 +122,48 @@ func TestDiagnostics(t *testing.T) {
 	}
 }
 
+func TestLeadingBooleanOperatorDiagnostic(t *testing.T) {
+	for _, op := range []string{"and", "or"} {
+		t.Run(op, func(t *testing.T) {
+			src := "fn both(a: Bool, b: Bool) -> Bool\n  a\n    " + op + " b\nend fn\n"
+			ds := &diag.List{}
+			syntax.Parse("leading_operator.veld", src, ds)
+			got := ds.Sorted()
+			if len(got) != 1 {
+				t.Fatalf("expected one diagnostic, got:\n%s", diag.Text(got, nil))
+			}
+			d := got[0]
+			if d.Code != "E104" || !strings.Contains(d.Message, "starts a new statement") {
+				t.Fatalf("expected targeted E104, got %s: %s", d.Code, d.Message)
+			}
+			if len(d.Fixes) != 1 {
+				t.Fatalf("expected one fix, got %d", len(d.Fixes))
+			}
+			fixed, applied := diag.ApplyFixes(src, d.Fixes)
+			if applied != 1 || !strings.Contains(fixed, "a "+op+"\n") {
+				t.Fatalf("operator was not moved to the previous line:\n%s", fixed)
+			}
+			ds2 := &diag.List{}
+			syntax.Parse("leading_operator.veld", fixed, ds2)
+			if ds2.HasErrors() {
+				t.Fatalf("fix left parse errors:\n%s\n--- fixed source ---\n%s", diag.Text(ds2.Sorted(), nil), fixed)
+			}
+		})
+	}
+	t.Run("does not move an operator after a trailing comment", func(t *testing.T) {
+		src := "fn both(a: Bool, b: Bool) -> Bool\n  a # keep this comment\n    and b\nend fn\n"
+		ds := &diag.List{}
+		syntax.Parse("leading_operator.veld", src, ds)
+		got := ds.Sorted()
+		if len(got) != 1 || !strings.Contains(got[0].Message, "starts a new statement") {
+			t.Fatalf("expected targeted diagnostic, got:\n%s", diag.Text(got, nil))
+		}
+		if len(got[0].Fixes) != 0 {
+			t.Fatalf("expected no unsafe automatic fix after a trailing comment")
+		}
+	})
+}
+
 // TestFixesRepair checks that applying the suggested fixes removes the
 // targeted errors, for every golden case whose errors all carry fixes.
 func TestFixesRepair(t *testing.T) {

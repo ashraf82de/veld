@@ -1105,6 +1105,28 @@ func (p *parser) parsePrimary() Expr {
 		p.next()
 		return &TodoExpr{Span: t.Span}
 	}
+	if (t.Kind == KW_AND || t.Kind == KW_OR) && p.pos > 0 && p.toks[p.pos-1].Kind == NEWLINE {
+		d := p.errAt(t.Span, "E104", "`%s` starts a new statement because the previous line was complete", t.Text).
+			Note("write binary operators at the end of the previous line to continue an expression")
+		lineEnd := p.toks[p.pos-1].Span.Start
+		hasTrailingComment := false
+		for _, comment := range p.comments {
+			if comment.Line == lineEnd.Line && !comment.Own {
+				hasTrailingComment = true
+				break
+			}
+		}
+		if !hasTrailingComment {
+			d.Fixes = append(d.Fixes, diag.Fix{
+				Message: "move `" + t.Text + "` to the previous line",
+				Edits: []diag.Edit{
+					{Span: t.Span, Text: ""},
+					{Span: diag.Span{File: p.file, Start: lineEnd, End: lineEnd}, Text: " " + t.Text},
+				},
+			})
+		}
+		panic(bailout{})
+	}
 	d := p.errAt(t.Span, "E104", "expected an expression, found %s", p.describe(t))
 	if t.Kind == KW_END {
 		d.Note("a block is closed here, but an expression was still expected")

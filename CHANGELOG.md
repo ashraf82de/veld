@@ -82,6 +82,8 @@ change lists how to migrate (`veld fix` carries the migration where possible).
   patterns, recursion and value semantics; `bench/`: benchmark programs.
 
 ### Fixed
+- A leading `and` or `or` on a new line now explains Veld's continuation rule
+  and, when safe, offers a fix that moves the operator to the previous line.
 - `veld fix --stdout` now checks intermediate repairs in memory and leaves
   source files untouched, including their modification times. In-place fixes
   report final write failures instead of silently succeeding.

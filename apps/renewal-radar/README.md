@@ -47,6 +47,18 @@ trimming whitespace and ignoring case for text fields. Notes may differ without
 making an otherwise identical renewal distinct. The import rejects the entire
 file on the first error and writes nothing until every record passes.
 
+Export a canonical, app-native JSON snapshot to a separate path:
+
+```sh
+go run ./cmd/veld run apps/renewal-radar/main.veld -- export backups/renewals.json
+```
+
+The destination uses the same validated format as the active data file, so it
+can be restored by copying it over the active file while writers are stopped.
+Repeated exports preserve the previous destination as `<json-path>.bak`. The
+command refuses the active data file and its `.bak`/`.tmp` companions, and it
+never changes the active inventory. Create the destination directory first.
+
 The default data file is `renewal-radar.json` in the current directory. Use
 `--file=PATH` on any command to choose another location. Dates accept
 `YYYY-MM-DD` (treated as the end of that UTC day) or a full RFC 3339 timestamp.

@@ -3,8 +3,20 @@
 Status: **scheduled and enabled**, confirmed on 2026-10-03 through the task
 service. **Build Veld applications** runs daily around 06:30 Europe/Berlin,
 starting 2026-10-04, before the language maintainer's morning pass. Each run
-continues the same product's durable backlog. Task creation is confirmed;
-no application build or successful task run is claimed yet.
+continues the same product's durable backlog. Task creation is confirmed.
+
+The builder's first active product is
+[Renewal Radar](../../apps/renewal-radar/README.md). Its initial application,
+validated CSV import and safe JSON export were merged in PRs
+[#12](https://github.com/ashraf82de/veld/pull/12),
+[#13](https://github.com/ashraf82de/veld/pull/13) and
+[#15](https://github.com/ashraf82de/veld/pull/15). Linux and Windows passed on
+the latest merged tree in
+[CI run 37419369106](https://github.com/ashraf82de/veld/actions/runs/37419369106).
+The current product handoff and next action live in
+[`apps/renewal-radar/MAINTENANCE.md`](../../apps/renewal-radar/MAINTENANCE.md).
+These repository records establish completed task output, not continuous task
+health or product adoption.
 
 The task is external to this repository. Cloning the repository does not
 activate it. Manage its schedule and inspect run results in ChatGPT's

@@ -49,6 +49,8 @@ establish adoption for Renewal Radar.
 - Filter items due within a configurable number of days.
 - Import a five-column CSV only after all records and duplicates validate, with
   a dry-run mode that performs no write.
+- Export canonical, restorable JSON snapshots without changing the active data
+  file, retaining the previous export as a backup.
 - Renew or remove an item by stable integer ID.
 - Persist a portable JSON file and retain a previous-file backup on writes.
 - Reject malformed persisted data instead of silently discarding it.
@@ -59,5 +61,5 @@ establish adoption for Renewal Radar.
 - The current CLI supports one writer at a time.
 - It does not send notifications, authenticate users or encrypt sensitive
   content. Store only metadata suitable for a local plaintext file.
-- A browser interface, JSON export and notification adapters remain roadmap
+- A browser interface and notification adapters remain roadmap
   work and need their own verification.

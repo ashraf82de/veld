@@ -3,6 +3,7 @@ use std.env
 use std.fs
 use std.io
 use std.list
+use std.path
 use std.str
 use std.time
 use lib.importer
@@ -11,7 +12,7 @@ use lib.store
 
 fn data_path(parsed: cli.Parsed) -> Str
   match cli.flag(parsed, "file")
-    case Some(path) => path
+    case Some(file_path) => file_path
     case None => "renewal-radar.json"
   end match
 end fn
@@ -27,8 +28,8 @@ fn add(parsed: cli.Parsed, name: Str, expiry: Str) -> Result[Str, Str] uses fs
   if str.trim(name) == ""
     return Err("name must not be empty")
   end if
-  let path = data_path(parsed)
-  let items = store.load(path)?
+  let file_path = data_path(parsed)
+  let items = store.load(file_path)?
   let item = model.Renewal{
     id: model.next_id(items),
     name: str.trim(name),
@@ -37,7 +38,7 @@ fn add(parsed: cli.Parsed, name: Str, expiry: Str) -> Result[Str, Str] uses fs
     category: flag_or(parsed, name: "category", fallback: ""),
     notes: flag_or(parsed, name: "notes", fallback: ""),
   }
-  store.save(path, list.push(items, item))?
+  store.save(file_path, list.push(items, item))?
   Ok("added #${item.id} ${item.name}, expires ${model.date_text(item.expires_ms)}")
 end fn
 
@@ -47,8 +48,8 @@ fn renew(parsed: cli.Parsed, id_text: Str, expiry: Str) -> Result[Str, Str] uses
     case None => return Err("renewal id must be an integer")
   end match
   let expires_ms = model.parse_expiry(expiry)?
-  let path = data_path(parsed)
-  let items = store.load(path)?
+  let file_path = data_path(parsed)
+  let items = store.load(file_path)?
   if not list.any(items, fn(item) => item.id == id)
     return Err("no renewal with id ${id}")
   end if
@@ -62,7 +63,7 @@ fn renew(parsed: cli.Parsed, id_text: Str, expiry: Str) -> Result[Str, Str] uses
       end if
     end fn,
   )
-  store.save(path, updated)?
+  store.save(file_path, updated)?
   Ok("renewed #${id} through ${model.date_text(expires_ms)}")
 end fn
 
@@ -71,26 +72,54 @@ fn remove(parsed: cli.Parsed, id_text: Str) -> Result[Str, Str] uses fs
     case Some(value) => value
     case None => return Err("renewal id must be an integer")
   end match
-  let path = data_path(parsed)
-  let items = store.load(path)?
+  let file_path = data_path(parsed)
+  let items = store.load(file_path)?
   let kept = list.filter(items, fn(item) => item.id != id)
   if list.len(kept) == list.len(items)
     return Err("no renewal with id ${id}")
   end if
-  store.save(path, kept)?
+  store.save(file_path, kept)?
   Ok("removed #${id}")
 end fn
 
 fn import_file(parsed: cli.Parsed, csv_path: Str) -> Result[Str, Str] uses fs
-  let path = data_path(parsed)
-  let existing = store.load(path)?
+  let file_path = data_path(parsed)
+  let existing = store.load(file_path)?
   let imported = importer.parse(fs.read(csv_path)?, existing)?
   let count = list.len(imported)
   if cli.has(parsed, "dry-run")
     return Ok("validated ${count_text(count)}; no duplicates; data file unchanged")
   end if
-  store.save(path, existing + imported)?
-  Ok("imported ${count_text(count)} into ${path}")
+  store.save(file_path, existing + imported)?
+  Ok("imported ${count_text(count)} into ${file_path}")
+end fn
+
+fn export_file(parsed: cli.Parsed, destination: Str) -> Result[Str, Str] uses env, fs
+  let source = data_path(parsed)
+  validate_export_path(source, destination: destination, cwd: env.cwd())?
+  let items = store.load(source)?
+  store.save(destination, items)?
+  Ok("exported ${count_text(list.len(items))} to ${destination}")
+end fn
+
+fn validate_export_path(source: Str, destination: Str, cwd: Str) -> Result[Unit, Str]
+  if str.trim(destination) == ""
+    return Err("export path must not be empty")
+  end if
+  let clean_source = absolute_path(source, cwd)
+  let clean_destination = absolute_path(destination, cwd)
+  if clean_destination == clean_source or clean_destination == "${clean_source}.bak" or clean_destination == "${clean_source}.tmp"
+    return Err("export path must differ from the active data file and its .bak/.tmp companions")
+  end if
+  Ok(Unit)
+end fn
+
+fn absolute_path(value: Str, cwd: Str) -> Str
+  if path.is_absolute(value)
+    path.clean(value)
+  else
+    path.join([cwd, value])
+  end if
 end fn
 
 fn count_text(count: Int) -> Str
@@ -165,6 +194,7 @@ fn usage() -> Str
       "  list",
       "  show <id>",
       "  due [--days=30]",
+      "  export <json-path>",
       "  import <csv-path> [--dry-run]",
       "  renew <id> <YYYY-MM-DD>",
       "  remove <id>",
@@ -175,7 +205,7 @@ fn usage() -> Str
   )
 end fn
 
-fn execute(args: List[Str], now_ms: Int) -> Result[Str, Str] uses fs
+fn execute(args: List[Str], now_ms: Int) -> Result[Str, Str] uses env, fs
   let parsed = cli.parse(args)
   match parsed.positional
     case ["add", name, expiry] => add(parsed, name: name, expiry: expiry)
@@ -187,6 +217,7 @@ fn execute(args: List[Str], now_ms: Int) -> Result[Str, Str] uses fs
         case None => return Err("--days must be an integer")
       end match
       due_text(store.load(data_path(parsed))?, now_ms: now_ms, days: days)
+    case ["export", destination] => export_file(parsed, destination)
     case ["import", csv_path] => import_file(parsed, csv_path)
     case ["renew", id, expiry] => renew(parsed, id_text: id, expiry: expiry)
     case ["remove", id] => remove(parsed, id)
@@ -220,4 +251,13 @@ test "list and due rendering"
   expect display_value("ops") == "ops"
   expect count_text(1) == "1 renewal"
   expect count_text(2) == "2 renewals"
+end test
+
+test "export path safety"
+  expect validate_export_path("data.json", destination: "backups/data.json", cwd: "/work") == Ok(Unit)
+  expect validate_export_path("data.json", destination: "./data.json", cwd: "/work") == Err("export path must differ from the active data file and its .bak/.tmp companions")
+  expect validate_export_path("/work/data.json", destination: "data.json", cwd: "/work") == Err("export path must differ from the active data file and its .bak/.tmp companions")
+  expect validate_export_path("data.json", destination: "data.json.bak", cwd: "/work") == Err("export path must differ from the active data file and its .bak/.tmp companions")
+  expect validate_export_path("data.json", destination: "data.json.tmp", cwd: "/work") == Err("export path must differ from the active data file and its .bak/.tmp companions")
+  expect validate_export_path("data.json", destination: "", cwd: "/work") == Err("export path must not be empty")
 end test

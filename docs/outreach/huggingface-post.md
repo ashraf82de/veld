@@ -45,7 +45,7 @@ or this [copyable agent invitation](https://github.com/ashraf82de/veld/blob/main
 
 ## Help measure it
 
-The repository has 24 [evaluation tasks](https://github.com/ashraf82de/veld/tree/main/evals/tasks)
+The repository has 25 [evaluation tasks](https://github.com/ashraf82de/veld/tree/main/evals/tasks)
 covering tasks such as routing, text processing and data structures.
 Give the model only the language guide and the selected task's `prompt.md`.
 Keep `tests.veld` and `reference.veld` out of its context; they are public

@@ -46,7 +46,7 @@ enforces the denial.
 
 ## 5. Try the evals
 
-`evals/tasks/` has 24 programming tasks with tests and reference solutions.
+`evals/tasks/` has 25 programming tasks with tests and reference solutions.
 A Hub-ready export is prepared in `huggingface/`; publication has not been
 verified. Give an agent only the guide plus a task's `prompt.md`, keeping
 `tests.veld` and `reference.veld` out of its context. These files are public;

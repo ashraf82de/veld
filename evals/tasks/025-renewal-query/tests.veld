@@ -1,0 +1,32 @@
+use solution
+
+fn renewal(name: Str, owner: Str, category: Str, expires_day: Int) -> solution.Renewal
+  solution.Renewal{name: name, owner: owner, category: category, expires_day: expires_day}
+end fn
+
+test "filters, statuses, and ordering"
+  let items = [
+    renewal("support", owner: " Ops ", category: "Contract", expires_day: 110),
+    renewal("domain", owner: "ops", category: "domain", expires_day: 99),
+    renewal("certificate", owner: "ops", category: "tls", expires_day: 100),
+    renewal("analytics", owner: "sales", category: "contract", expires_day: 110),
+    renewal("later", owner: "ops", category: "domain", expires_day: 140),
+  ]
+  expect solution.due(items, today: 100, within: 30, owner: "", category: "") == Ok(
+    [
+      "OVERDUE 1d | domain | owner=ops | category=domain",
+      "DUE TODAY | certificate | owner=ops | category=tls",
+      "DUE 10d | analytics | owner=sales | category=contract",
+      "DUE 10d | support | owner= Ops  | category=Contract",
+    ],
+  )
+  expect solution.due(items, today: 100, within: 30, owner: "  OPS ", category: "CONTRACT") == Ok(["DUE 10d | support | owner= Ops  | category=Contract"])
+end test
+
+test "empty, unmatched, and invalid windows"
+  let item = renewal("domain", owner: "ops", category: "domain", expires_day: 105)
+  expect solution.due([], today: 100, within: 30, owner: "", category: "") == Ok([])
+  expect solution.due([item], today: 100, within: 4, owner: "", category: "") == Ok([])
+  expect solution.due([item], today: 100, within: 30, owner: "sales", category: "") == Ok([])
+  expect solution.due([item], today: 100, within: -1, owner: "", category: "") == Err("within must be zero or greater")
+end test

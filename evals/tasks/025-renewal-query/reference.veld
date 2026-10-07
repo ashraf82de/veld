@@ -1,0 +1,53 @@
+use std.list
+use std.str
+
+pub record Renewal
+  name: Str
+  owner: Str
+  category: Str
+  expires_day: Int
+end record
+
+fn normalized(value: Str) -> Str
+  str.lower(str.trim(value))
+end fn
+
+fn matches(item: Renewal, owner: Str, category: Str) -> Bool
+  let owner_matches = owner == "" or normalized(item.owner) == owner
+  let category_matches = category == "" or normalized(item.category) == category
+  owner_matches and category_matches
+end fn
+
+fn status(delta: Int) -> Str
+  if delta < 0
+    "OVERDUE ${-delta}d"
+  else if delta == 0
+    "DUE TODAY"
+  else
+    "DUE ${delta}d"
+  end if
+end fn
+
+fn line(item: Renewal, today: Int) -> Str
+  let delta = item.expires_day - today
+  "${status(delta)} | ${item.name} | owner=${item.owner} | category=${item.category}"
+end fn
+
+pub fn due(items: List[Renewal], today: Int, within: Int, owner: Str, category: Str) -> Result[List[Str], Str]
+  if within < 0
+    return Err("within must be zero or greater")
+  end if
+  let owner_filter = normalized(owner)
+  let category_filter = normalized(category)
+  let filtered = list.filter(
+    items,
+    fn(item)
+      let filters_match = matches(item, owner: owner_filter, category: category_filter)
+      let window_matches = item.expires_day - today <= within
+      filters_match and window_matches
+    end fn,
+  )
+  let by_name = list.sort_by(filtered, key: fn(item) => item.name)
+  let ordered = list.sort_by(by_name, key: fn(item) => item.expires_day)
+  Ok(list.map(ordered, fn(item) => line(item, today)))
+end fn

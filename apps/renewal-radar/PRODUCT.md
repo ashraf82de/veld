@@ -46,7 +46,8 @@ establish adoption for Renewal Radar.
   category and notes.
 - List items in expiry order with overdue and upcoming status, and view all
   details for one stable ID.
-- Filter items due within a configurable number of days.
+- Filter the inventory by owner and category, independently or together, and
+  filter matching items due within a configurable number of days.
 - Import a five-column CSV only after all records and duplicates validate, with
   a dry-run mode that performs no write.
 - Export canonical, restorable JSON snapshots without changing the active data

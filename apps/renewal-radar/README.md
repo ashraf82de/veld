@@ -19,10 +19,15 @@ From the Veld repository root:
 go run ./cmd/veld run apps/renewal-radar/main.veld -- help
 go run ./cmd/veld run apps/renewal-radar/main.veld -- add "Example domain" 2027-01-15 --owner=ops --category=domain
 go run ./cmd/veld run apps/renewal-radar/main.veld -- list
+go run ./cmd/veld run apps/renewal-radar/main.veld -- list --owner=ops --category=domain
 go run ./cmd/veld run apps/renewal-radar/main.veld -- show 1
-go run ./cmd/veld run apps/renewal-radar/main.veld -- due --days=60
+go run ./cmd/veld run apps/renewal-radar/main.veld -- due --days=60 --owner=ops
 go run ./cmd/veld run apps/renewal-radar/main.veld -- renew 1 2028-01-15
 ```
+
+`list` and `due` accept optional `--owner` and `--category` filters. Values are
+trimmed and compared without regard to letter case. Supplying both filters uses
+AND semantics, so a record must match both.
 
 Import an existing inventory with this exact header:
 

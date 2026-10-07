@@ -176,11 +176,35 @@ fn display_value(value: Str) -> Str
   end if
 end fn
 
-fn due_text(items: List[model.Renewal], now_ms: Int, days: Int) -> Result[Str, Str]
+fn normalized_filter(parsed: cli.Parsed, name: Str) -> Result[Str, Str]
+  let value = str.trim(flag_or(parsed, name: name, fallback: ""))
+  if cli.has(parsed, name) and value == ""
+    return Err("--${name} must not be empty")
+  end if
+  Ok(str.lower(value))
+end fn
+
+fn filter_items(items: List[model.Renewal], owner: Str, category: Str) -> List[model.Renewal]
+  list.filter(
+    items,
+    fn(item)
+      let owner_matches = owner == "" or str.lower(str.trim(item.owner)) == owner
+      let category_matches = category == "" or str.lower(str.trim(item.category)) == category
+      owner_matches and category_matches
+    end fn,
+  )
+end fn
+
+fn filtered_text(items: List[model.Renewal], now_ms: Int, owner: Str, category: Str) -> Str
+  list_text(filter_items(items, owner: owner, category: category), now_ms)
+end fn
+
+fn due_text(items: List[model.Renewal], now_ms: Int, days: Int, owner: Str, category: Str) -> Result[Str, Str]
   if days < 0
     return Err("--days must be zero or greater")
   end if
-  let due = list.filter(items, fn(item) => model.days_until(item, now_ms) <= days)
+  let filtered = filter_items(items, owner: owner, category: category)
+  let due = list.filter(filtered, fn(item) => model.days_until(item, now_ms) <= days)
   Ok(list_text(due, now_ms))
 end fn
 
@@ -191,9 +215,9 @@ fn usage() -> Str
       "",
       "Commands:",
       "  add <name> <YYYY-MM-DD> [--owner=NAME] [--category=TYPE] [--notes=TEXT]",
-      "  list",
+      "  list [--owner=NAME] [--category=TYPE]",
       "  show <id>",
-      "  due [--days=30]",
+      "  due [--days=30] [--owner=NAME] [--category=TYPE]",
       "  export <json-path>",
       "  import <csv-path> [--dry-run]",
       "  renew <id> <YYYY-MM-DD>",
@@ -209,14 +233,21 @@ fn execute(args: List[Str], now_ms: Int) -> Result[Str, Str] uses env, fs
   let parsed = cli.parse(args)
   match parsed.positional
     case ["add", name, expiry] => add(parsed, name: name, expiry: expiry)
-    case ["list"] => Ok(list_text(store.load(data_path(parsed))?, now_ms))
+    case ["list"]
+      let owner = normalized_filter(parsed, "owner")?
+      let category = normalized_filter(parsed, "category")?
+      Ok(
+        filtered_text(store.load(data_path(parsed))?, now_ms: now_ms, owner: owner, category: category),
+      )
     case ["show", id] => show(parsed, id_text: id, now_ms: now_ms)
     case ["due"]
       let days = match str.to_int(flag_or(parsed, name: "days", fallback: "30"))
         case Some(value) => value
         case None => return Err("--days must be an integer")
       end match
-      due_text(store.load(data_path(parsed))?, now_ms: now_ms, days: days)
+      let owner = normalized_filter(parsed, "owner")?
+      let category = normalized_filter(parsed, "category")?
+      due_text(store.load(data_path(parsed))?, now_ms: now_ms, days: days, owner: owner, category: category)
     case ["export", destination] => export_file(parsed, destination)
     case ["import", csv_path] => import_file(parsed, csv_path)
     case ["renew", id, expiry] => renew(parsed, id_text: id, expiry: expiry)
@@ -244,13 +275,41 @@ test "list and due rendering"
     notes: "",
   }
   expect list_text([later, due], now) == "#2 | 1970-01-03 | DUE 1d | domain | owner=ops | category=domain\n#1 | 1970-02-11 | OK 40d | support | owner=- | category=contract"
-  expect due_text([later, due], now_ms: now, days: 30) == Ok("#2 | 1970-01-03 | DUE 1d | domain | owner=ops | category=domain")
-  expect due_text([later], now_ms: now, days: 30) == Ok("No renewals tracked.")
-  expect due_text([], now_ms: now, days: -1) == Err("--days must be zero or greater")
+  expect due_text([later, due], now_ms: now, days: 30, owner: "", category: "") == Ok("#2 | 1970-01-03 | DUE 1d | domain | owner=ops | category=domain")
+  expect due_text([later], now_ms: now, days: 30, owner: "", category: "") == Ok("No renewals tracked.")
+  expect due_text([], now_ms: now, days: -1, owner: "", category: "") == Err("--days must be zero or greater")
   expect display_value("") == "-"
   expect display_value("ops") == "ops"
   expect count_text(1) == "1 renewal"
   expect count_text(2) == "2 renewals"
+end test
+
+test "owner and category filters"
+  let now = 86400000
+  let domain = model.Renewal{id: 1, name: "domain", expires_ms: now + 86400000, owner: " Ops ", category: "Domain", notes: ""}
+  let support = model.Renewal{
+    id: 2,
+    name: "support",
+    expires_ms: now + 2 * 86400000,
+    owner: "ops",
+    category: "contract",
+    notes: "",
+  }
+  let license = model.Renewal{
+    id: 3,
+    name: "license",
+    expires_ms: now + 3 * 86400000,
+    owner: "sales",
+    category: "contract",
+    notes: "",
+  }
+  expect filter_items([domain, support, license], owner: "ops", category: "") == [domain, support]
+  expect filter_items([domain, support, license], owner: "", category: "contract") == [support, license]
+  expect filter_items([domain, support, license], owner: "ops", category: "contract") == [support]
+  expect filter_items([domain, support, license], owner: "nobody", category: "") == []
+  expect due_text([domain, support, license], now_ms: now, days: 30, owner: "ops", category: "domain") == Ok("#1 | 1970-01-03 | DUE 1d | domain | owner= Ops  | category=Domain")
+  expect normalized_filter(cli.parse(["--owner=  OPS  "]), "owner") == Ok("ops")
+  expect normalized_filter(cli.parse(["--category="]), "category") == Err("--category must not be empty")
 end test
 
 test "export path safety"

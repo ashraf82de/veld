@@ -10,7 +10,7 @@ codes and failed tasks in `veld eval --json`, and issues labelled
       definition) for agent IDE integrations.
 - [ ] Exact exhaustiveness for list patterns with elements after `..rest`.
 - [ ] Explicit effect variables for higher-order functions stored in data.
-- [ ] More evals (24 today; target 50) spanning CLI tools, data processing,
+- [ ] More evals (25 today; target 50) spanning CLI tools, data processing,
       HTTP services and algorithms; a script that runs a model against them.
 - [ ] More of `std.task`: spawn/await and channels; reject captured `var`s at
       check time instead of at run time.

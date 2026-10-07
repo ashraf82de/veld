@@ -7,10 +7,12 @@
 - Initial Veld base: `0a20f1cf1581d0c43d7e6fe732ba37a28d1f3cd9`.
 - CSV import Veld base: `70fd5aebfcbb7f7b753e44ee80ea66d57fb9569a`.
 - JSON export Veld base: `530936af1a10428ac323eaff56ba0725b28ab8fe`.
+- Owner/category filter Veld base: `51e0cf6dd5496b4163eb55abbb7e60c3f11cc3aa`.
 - Current state: the CLI supports its local inventory workflow and validated CSV
-  import with duplicate detection and dry-run mode, plus canonical JSON export.
-- Next action: add category and owner filtering unless user feedback
-  exposes a higher-priority defect.
+  import with duplicate detection and dry-run mode, canonical JSON export, and
+  case-insensitive owner/category filters for list and due results.
+- Next action: add interrupted-write recovery coverage on Linux and Windows
+  unless user feedback exposes a higher-priority defect.
 - Upstream issues: none filed. No compiler or language defect has yet been
   reproduced by this application.
 
@@ -88,3 +90,18 @@ initially produced `E204` errors because existing bindings were also named
 application tests then passed. No compiler or language defect was reproduced,
 so no upstream issue was filed. Hosted Linux and Windows checks remain required
 before merging this slice.
+
+## Recorded filtering trial: 2026-10-07
+
+The builder used a realistic synthetic inventory with domain and contract
+renewals assigned to operations and sales owners. Owner-only and category-only
+queries returned the expected subsets; combining both filters returned their
+intersection. Mixed-case input and surrounding whitespace matched normalized
+stored values, and the same filters constrained a due-date query. An unmatched
+owner returned an empty inventory rather than unrelated records.
+
+This is an implementation trial, not external user feedback or adoption. The
+application tests cover independent and combined filters, normalization, empty
+filter rejection, unmatched values and composition with the due window. No
+compiler or language defect was reproduced, so no upstream issue was filed.
+Hosted Linux and Windows checks remain required before merging this slice.

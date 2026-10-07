@@ -9,10 +9,10 @@
 - [x] Complete a recorded builder usability trial with realistic synthetic data.
 - [x] Import CSV with dry-run validation and duplicate detection.
 - [x] Export canonical JSON snapshots suitable for versioned backups.
+- [x] Filter list and due results by category and owner.
 
 ## Next: safer data exchange
 
-- Category and owner filters.
 - Tests covering interrupted-write recovery on Linux and Windows.
 
 ## Later: self-hosted web workflow
@@ -22,6 +22,7 @@
 - Optional reminder adapters with explicit configuration and secret handling.
 - Container and upgrade documentation after the server workflow is verified.
 
-The next concrete action is category and owner filtering unless product
-feedback reveals a higher-priority defect. Language gaps found during that work
-should be reproduced and filed upstream with the exact Veld commit.
+The next concrete action is interrupted-write recovery coverage on Linux and
+Windows unless product feedback reveals a higher-priority defect. Language
+gaps found during that work should be reproduced and filed upstream with the
+exact Veld commit.

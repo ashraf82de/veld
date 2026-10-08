@@ -8,11 +8,13 @@
 - CSV import Veld base: `70fd5aebfcbb7f7b753e44ee80ea66d57fb9569a`.
 - JSON export Veld base: `530936af1a10428ac323eaff56ba0725b28ab8fe`.
 - Owner/category filter Veld base: `51e0cf6dd5496b4163eb55abbb7e60c3f11cc3aa`.
+- Interrupted-write recovery Veld base: `419447f10f64465f560f2f52d3cc04e6820c8c2d`.
 - Current state: the CLI supports its local inventory workflow and validated CSV
   import with duplicate detection and dry-run mode, canonical JSON export, and
-  case-insensitive owner/category filters for list and due results.
-- Next action: add interrupted-write recovery coverage on Linux and Windows
-  unless user feedback exposes a higher-priority defect.
+  case-insensitive owner/category filters for list and due results, and
+  validated temporary-file recovery with backup fallback.
+- Next action: add a read-only data health command unless user feedback exposes
+  a higher-priority defect.
 - Upstream issues: none filed. No compiler or language defect has yet been
   reproduced by this application.
 
@@ -37,8 +39,9 @@ are not evidence of user adoption.
 
 The CLI writes one JSON array. Before replacing an existing file, it copies the
 previous contents to `<file>.bak`, writes the new contents to `<file>.tmp`, and
-moves the temporary file into place. If the primary file is absent, reads fall
-back to the backup. Operators should still keep external versioned backups.
+moves the temporary file into place. If the primary file is absent, reads use a
+valid temporary file first; a partial or invalid temporary file is ignored and
+the backup is used. Operators should still keep external versioned backups.
 
 The application does not provide locking. Do not run concurrent writers against
 the same file. Do not store passwords, private keys or other secrets in notes.
@@ -105,3 +108,20 @@ application tests cover independent and combined filters, normalization, empty
 filter rejection, unmatched values and composition with the due window. No
 compiler or language defect was reproduced, so no upstream issue was filed.
 Hosted Linux and Windows checks remain required before merging this slice.
+
+## Recorded interrupted-write trial: 2026-10-08
+
+The builder simulated the two recoverable states left when replacement stops
+after the primary file is removed. With a complete temporary JSON file and an
+older backup, loading returned the complete temporary inventory. With a
+truncated temporary file, loading rejected it and returned the valid backup.
+Both tests removed their synthetic companion files afterward.
+
+The valid-temporary test failed against the previous implementation because it
+returned only the older backup, then passed after recovery began validating the
+temporary file first. The application suite passed 12 tests; the full local
+suite passed 64 Veld tests, all 25 reference evals and all nine benchmark smoke
+programs. This is synthetic recovery evidence, not a claim about external user
+adoption. No compiler or language defect was reproduced, so no upstream issue
+was filed. Hosted Linux and Windows checks remain required before merging this
+slice.

@@ -10,10 +10,15 @@
 - [x] Import CSV with dry-run validation and duplicate detection.
 - [x] Export canonical JSON snapshots suitable for versioned backups.
 - [x] Filter list and due results by category and owner.
+- [x] Recover a valid interrupted replacement, with backup fallback for a
+  partial temporary file, on Linux and Windows.
 
-## Next: safer data exchange
+## Next: operational confidence
 
-- Tests covering interrupted-write recovery on Linux and Windows.
+- Add a read-only data health command that reports the primary, temporary and
+  backup state and the recovery source without modifying files.
+- Prepare installation and first-release instructions after the health command
+  is verified.
 
 ## Later: self-hosted web workflow
 
@@ -22,7 +27,6 @@
 - Optional reminder adapters with explicit configuration and secret handling.
 - Container and upgrade documentation after the server workflow is verified.
 
-The next concrete action is interrupted-write recovery coverage on Linux and
-Windows unless product feedback reveals a higher-priority defect. Language
-gaps found during that work should be reproduced and filed upstream with the
-exact Veld commit.
+The next concrete action is a read-only data health command unless product
+feedback reveals a higher-priority defect. Language gaps found during that
+work should be reproduced and filed upstream with the exact Veld commit.

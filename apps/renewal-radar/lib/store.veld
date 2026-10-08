@@ -4,6 +4,12 @@ use lib.model
 
 pub fn load(path: Str) -> Result[List[model.Renewal], Str] uses fs
   if not fs.exists(path)
+    if fs.exists(temp_path(path))
+      match read_items(temp_path(path))
+        case Ok(items) => return Ok(items)
+        case Err(_) => Unit
+      end match
+    end if
     if fs.exists(backup_path(path))
       return read_items(backup_path(path))
     end if
@@ -58,4 +64,25 @@ test "save, backup, and recovery"
   expect fs.remove(path) == Ok(Unit)
   expect load(path) == Ok([first])
   expect fs.remove(backup_path(path)) == Ok(Unit)
+end test
+
+test "interrupted replacement recovers the validated temporary file"
+  let path = "renewal_radar_interrupted_valid_test.json"
+  let previous = model.Renewal{id: 1, name: "previous", expires_ms: 10, owner: "", category: "", notes: ""}
+  let pending = model.Renewal{id: 2, name: "pending", expires_ms: 20, owner: "", category: "", notes: ""}
+  expect fs.write(backup_path(path), model.encode_items([previous])) == Ok(Unit)
+  expect fs.write(temp_path(path), model.encode_items([previous, pending])) == Ok(Unit)
+  expect load(path) == Ok([previous, pending])
+  expect fs.remove(backup_path(path)) == Ok(Unit)
+  expect fs.remove(temp_path(path)) == Ok(Unit)
+end test
+
+test "interrupted partial write falls back to the backup"
+  let path = "renewal_radar_interrupted_partial_test.json"
+  let previous = model.Renewal{id: 1, name: "previous", expires_ms: 10, owner: "", category: "", notes: ""}
+  expect fs.write(backup_path(path), model.encode_items([previous])) == Ok(Unit)
+  expect fs.write(temp_path(path), "[partial") == Ok(Unit)
+  expect load(path) == Ok([previous])
+  expect fs.remove(backup_path(path)) == Ok(Unit)
+  expect fs.remove(temp_path(path)) == Ok(Unit)
 end test

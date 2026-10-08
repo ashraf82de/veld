@@ -8,8 +8,10 @@ written in Veld.
 This first usable slice is a command-line application with durable JSON
 storage. It supports adding, listing, viewing, filtering, renewing and removing
 items, plus validated CSV imports with duplicate detection.
-Every write keeps a `.bak` copy of the previous data file, and a missing primary
-file is recovered from that backup on the next read.
+Every write keeps a `.bak` copy of the previous data file. If a replacement is
+interrupted after the primary is removed, the next read uses a complete,
+validated `.tmp` file first and falls back to `.bak` when the temporary file is
+partial or invalid.
 
 ## Run
 
@@ -77,9 +79,12 @@ go run ./cmd/veld fmt --check apps/renewal-radar
 ```
 
 The data file contains a JSON array and is intentionally portable. Copy the
-primary file and its optional `.bak` companion for backups. To restore, stop
-writers and copy the backup over the primary file. The CLI assumes one writer
-at a time; shared multi-user access needs a storage design that prevents lost
+primary file and its optional `.bak` companion for backups. A `.tmp` companion
+is an interrupted replacement: when the primary is absent, a valid temporary
+file takes precedence over the older backup; an invalid temporary file is
+ignored and the backup is used. To restore manually, stop writers and copy the
+chosen recovery file over the primary file. The CLI assumes one writer at a
+time; shared multi-user access needs a storage design that prevents lost
 updates.
 
 See [PRODUCT.md](PRODUCT.md) for scope and acceptance criteria,

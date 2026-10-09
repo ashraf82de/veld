@@ -218,6 +218,7 @@ fn usage() -> Str
       "  list [--owner=NAME] [--category=TYPE]",
       "  show <id>",
       "  due [--days=30] [--owner=NAME] [--category=TYPE]",
+      "  health",
       "  export <json-path>",
       "  import <csv-path> [--dry-run]",
       "  renew <id> <YYYY-MM-DD>",
@@ -248,6 +249,7 @@ fn execute(args: List[Str], now_ms: Int) -> Result[Str, Str] uses env, fs
       let owner = normalized_filter(parsed, "owner")?
       let category = normalized_filter(parsed, "category")?
       due_text(store.load(data_path(parsed))?, now_ms: now_ms, days: days, owner: owner, category: category)
+    case ["health"] => Ok(store.health(data_path(parsed)))
     case ["export", destination] => export_file(parsed, destination)
     case ["import", csv_path] => import_file(parsed, csv_path)
     case ["renew", id, expiry] => renew(parsed, id_text: id, expiry: expiry)

@@ -24,12 +24,19 @@ go run ./cmd/veld run apps/renewal-radar/main.veld -- list
 go run ./cmd/veld run apps/renewal-radar/main.veld -- list --owner=ops --category=domain
 go run ./cmd/veld run apps/renewal-radar/main.veld -- show 1
 go run ./cmd/veld run apps/renewal-radar/main.veld -- due --days=60 --owner=ops
+go run ./cmd/veld run apps/renewal-radar/main.veld -- health
 go run ./cmd/veld run apps/renewal-radar/main.veld -- renew 1 2028-01-15
 ```
 
 `list` and `due` accept optional `--owner` and `--category` filters. Values are
 trimmed and compared without regard to letter case. Supplying both filters uses
 AND semantics, so a record must match both.
+
+`health` reads and validates the primary data file and its `.tmp` and `.bak`
+companions, then reports which source normal commands would select. It never
+creates, replaces or removes a file. An invalid selected primary or backup is
+reported explicitly because normal commands will fail until it is repaired or
+replaced.
 
 Import an existing inventory with this exact header:
 

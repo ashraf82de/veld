@@ -9,12 +9,14 @@
 - JSON export Veld base: `530936af1a10428ac323eaff56ba0725b28ab8fe`.
 - Owner/category filter Veld base: `51e0cf6dd5496b4163eb55abbb7e60c3f11cc3aa`.
 - Interrupted-write recovery Veld base: `419447f10f64465f560f2f52d3cc04e6820c8c2d`.
+- Data-health command Veld base: `fc14a56f6709e73c9067f6c623b0efbb4698364d`.
 - Current state: the CLI supports its local inventory workflow and validated CSV
   import with duplicate detection and dry-run mode, canonical JSON export, and
   case-insensitive owner/category filters for list and due results, and
-  validated temporary-file recovery with backup fallback.
-- Next action: add a read-only data health command unless user feedback exposes
-  a higher-priority defect.
+  validated temporary-file recovery with backup fallback. The read-only health
+  command reports each companion's validity and the source normal reads select.
+- Next action: document reproducible installation, upgrade and rollback for a
+  first release candidate unless user feedback exposes a higher-priority defect.
 - Upstream issues: none filed. No compiler or language defect has yet been
   reproduced by this application.
 
@@ -125,3 +127,21 @@ programs. This is synthetic recovery evidence, not a claim about external user
 adoption. No compiler or language defect was reproduced, so no upstream issue
 was filed. Hosted Linux and Windows checks remain required before merging this
 slice.
+
+## Recorded data-health trial: 2026-10-09
+
+The builder created a realistic synthetic domain renewal, retained a backup,
+and ran the new `health` command. It reported a valid one-record primary, no
+temporary file, a valid one-record backup and `primary` as the selected source.
+SHA-256 checksums of both files were identical before and after the command,
+and no extra file was created. Tests also cover valid temporary recovery,
+invalid-temporary backup fallback and an empty inventory.
+
+This is implementation and read-only-behavior evidence, not external adoption.
+The application suite passed 16 tests; the full local suite passed 68 Veld
+tests, all 25 reference evals and all nine benchmark smoke programs. The first
+full-suite invocation omitted the freshly downloaded Go toolchain from `PATH`,
+so the `std.process` test correctly reported that `go` was unavailable; the
+documented verification passed after the toolchain directory was added. No
+compiler or language defect was reproduced, so no upstream issue was filed.
+Hosted Linux and Windows checks remain required before merging this slice.

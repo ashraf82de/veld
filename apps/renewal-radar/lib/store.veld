@@ -1,6 +1,14 @@
 use std.fs
 use std.json
+use std.list
+use std.str
 use lib.model
+
+record PathHealth
+  exists: Bool
+  valid: Bool
+  count: Int
+end record
 
 pub fn load(path: Str) -> Result[List[model.Renewal], Str] uses fs
   if not fs.exists(path)
@@ -40,6 +48,30 @@ pub fn backup_path(path: Str) -> Str
   "${path}.bak"
 end fn
 
+pub fn health(path: Str) -> Str uses fs
+  let primary = inspect_path(path)
+  let temporary = inspect_path(temp_path(path))
+  let backup = inspect_path(backup_path(path))
+  let selected = if primary.exists
+    selected_text("primary", primary)
+  else if temporary.valid
+    "temporary"
+  else if backup.exists
+    selected_text("backup", backup)
+  else
+    "empty inventory"
+  end if
+  str.join(
+    [
+      "primary: ${status_text(primary)}",
+      "temporary: ${status_text(temporary)}",
+      "backup: ${status_text(backup)}",
+      "selected: ${selected}",
+    ],
+    "\n",
+  )
+end fn
+
 fn temp_path(path: Str) -> Str
   "${path}.tmp"
 end fn
@@ -51,6 +83,36 @@ fn read_items(path: Str) -> Result[List[model.Renewal], Str] uses fs
     case Err(e) => return Err("invalid JSON in '${path}': ${e}")
   end match
   model.parse_items(value)
+end fn
+
+fn inspect_path(path: Str) -> PathHealth uses fs
+  if not fs.exists(path)
+    return PathHealth{exists: false, valid: false, count: 0}
+  end if
+  match read_items(path)
+    case Ok(items) => PathHealth{exists: true, valid: true, count: list.len(items)}
+    case Err(_) => PathHealth{exists: true, valid: false, count: 0}
+  end match
+end fn
+
+fn status_text(value: PathHealth) -> Str
+  if not value.exists
+    "missing"
+  else if not value.valid
+    "invalid"
+  else if value.count == 1
+    "valid (1 renewal)"
+  else
+    "valid (${value.count} renewals)"
+  end if
+end fn
+
+fn selected_text(name: Str, value: PathHealth) -> Str
+  if value.valid
+    name
+  else
+    "${name} (invalid; normal commands will fail)"
+  end if
 end fn
 
 test "save, backup, and recovery"
@@ -85,4 +147,41 @@ test "interrupted partial write falls back to the backup"
   expect load(path) == Ok([previous])
   expect fs.remove(backup_path(path)) == Ok(Unit)
   expect fs.remove(temp_path(path)) == Ok(Unit)
+end test
+
+test "health selects a valid primary"
+  let path = "renewal_radar_health_primary_test.json"
+  let current = model.Renewal{id: 1, name: "current", expires_ms: 10, owner: "", category: "", notes: ""}
+  let previous = model.Renewal{id: 2, name: "previous", expires_ms: 20, owner: "", category: "", notes: ""}
+  expect fs.write(path, model.encode_items([current])) == Ok(Unit)
+  expect fs.write(backup_path(path), model.encode_items([previous])) == Ok(Unit)
+  expect health(path) == "primary: valid (1 renewal)\ntemporary: missing\nbackup: valid (1 renewal)\nselected: primary"
+  expect fs.remove(path) == Ok(Unit)
+  expect fs.remove(backup_path(path)) == Ok(Unit)
+end test
+
+test "health selects a valid interrupted replacement"
+  let path = "renewal_radar_health_temporary_test.json"
+  let previous = model.Renewal{id: 1, name: "previous", expires_ms: 10, owner: "", category: "", notes: ""}
+  let pending = model.Renewal{id: 2, name: "pending", expires_ms: 20, owner: "", category: "", notes: ""}
+  expect fs.write(temp_path(path), model.encode_items([previous, pending])) == Ok(Unit)
+  expect fs.write(backup_path(path), model.encode_items([previous])) == Ok(Unit)
+  expect health(path) == "primary: missing\ntemporary: valid (2 renewals)\nbackup: valid (1 renewal)\nselected: temporary"
+  expect fs.remove(temp_path(path)) == Ok(Unit)
+  expect fs.remove(backup_path(path)) == Ok(Unit)
+end test
+
+test "health reports backup fallback from an invalid temporary file"
+  let path = "renewal_radar_health_backup_test.json"
+  let previous = model.Renewal{id: 1, name: "previous", expires_ms: 10, owner: "", category: "", notes: ""}
+  expect fs.write(temp_path(path), "[partial") == Ok(Unit)
+  expect fs.write(backup_path(path), model.encode_items([previous])) == Ok(Unit)
+  expect health(path) == "primary: missing\ntemporary: invalid\nbackup: valid (1 renewal)\nselected: backup"
+  expect fs.remove(temp_path(path)) == Ok(Unit)
+  expect fs.remove(backup_path(path)) == Ok(Unit)
+end test
+
+test "health reports an empty inventory without companions"
+  let path = "renewal_radar_health_empty_test.json"
+  expect health(path) == "primary: missing\ntemporary: missing\nbackup: missing\nselected: empty inventory"
 end test

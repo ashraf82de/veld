@@ -138,7 +138,7 @@ and no extra file was created. Tests also cover valid temporary recovery,
 invalid-temporary backup fallback and an empty inventory.
 
 This is implementation and read-only-behavior evidence, not external adoption.
-The application suite passed 16 tests; the full local suite passed 68 Veld
+The application suite passed 17 tests; the full local suite passed 69 Veld
 tests, all 25 reference evals and all nine benchmark smoke programs. The first
 full-suite invocation omitted the freshly downloaded Go toolchain from `PATH`,
 so the `std.process` test correctly reported that `go` was unavailable; the

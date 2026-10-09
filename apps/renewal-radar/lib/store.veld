@@ -160,6 +160,16 @@ test "health selects a valid primary"
   expect fs.remove(backup_path(path)) == Ok(Unit)
 end test
 
+test "health warns when the selected primary is invalid"
+  let path = "renewal_radar_health_invalid_primary_test.json"
+  let previous = model.Renewal{id: 1, name: "previous", expires_ms: 10, owner: "", category: "", notes: ""}
+  expect fs.write(path, "[partial") == Ok(Unit)
+  expect fs.write(backup_path(path), model.encode_items([previous])) == Ok(Unit)
+  expect health(path) == "primary: invalid\ntemporary: missing\nbackup: valid (1 renewal)\nselected: primary (invalid; normal commands will fail)"
+  expect fs.remove(path) == Ok(Unit)
+  expect fs.remove(backup_path(path)) == Ok(Unit)
+end test
+
 test "health selects a valid interrupted replacement"
   let path = "renewal_radar_health_temporary_test.json"
   let previous = model.Renewal{id: 1, name: "previous", expires_ms: 10, owner: "", category: "", notes: ""}

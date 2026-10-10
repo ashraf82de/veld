@@ -97,3 +97,5 @@ updates.
 See [PRODUCT.md](PRODUCT.md) for scope and acceptance criteria,
 [ROADMAP.md](ROADMAP.md) for planned slices, and
 [MAINTENANCE.md](MAINTENANCE.md) for the verified Veld version and handoff.
+Use [INSTALL.md](INSTALL.md) for pinned source installation, backup, upgrade and
+rollback instructions; no tagged Renewal Radar release has been published yet.

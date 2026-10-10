@@ -10,13 +10,17 @@
 - Owner/category filter Veld base: `51e0cf6dd5496b4163eb55abbb7e60c3f11cc3aa`.
 - Interrupted-write recovery Veld base: `419447f10f64465f560f2f52d3cc04e6820c8c2d`.
 - Data-health command Veld base: `fc14a56f6709e73c9067f6c623b0efbb4698364d`.
+- Installation guidance Veld base: `bd5c48814f5a974104e626a095afef7656fe7689`.
 - Current state: the CLI supports its local inventory workflow and validated CSV
   import with duplicate detection and dry-run mode, canonical JSON export, and
   case-insensitive owner/category filters for list and due results, and
   validated temporary-file recovery with backup fallback. The read-only health
   command reports each companion's validity and the source normal reads select.
-- Next action: document reproducible installation, upgrade and rollback for a
-  first release candidate unless user feedback exposes a higher-priority defect.
+  Pinned source installation, backup, side-by-side upgrade and rollback steps
+  are documented without claiming a release exists.
+- Next action: complete a recorded source-install, upgrade and rollback trial
+  before proposing a versioned release candidate, unless user feedback exposes
+  a higher-priority defect.
 - Upstream issues: none filed. No compiler or language defect has yet been
   reproduced by this application.
 
@@ -145,3 +149,17 @@ so the `std.process` test correctly reported that `go` was unavailable; the
 documented verification passed after the toolchain directory was added. No
 compiler or language defect was reproduced, so no upstream issue was filed.
 Hosted Linux and Windows checks remain required before merging this slice.
+
+## Recorded installation-guidance check: 2026-10-10
+
+The builder used a fresh checkout pinned to
+`bd5c48814f5a974104e626a095afef7656fe7689`, built a separate Veld binary from
+source with Go 1.25.1, and ran the documented application check, tests and
+initial health command against an empty external data directory. All 17
+application tests passed, the health report selected an empty inventory and no
+data file was created.
+
+This verifies the source-build and initial-validation path, not a published
+release or external adoption. A full side-by-side upgrade and rollback trial
+remains the next product action. Linux and Windows CI are still required for
+the documentation change itself.

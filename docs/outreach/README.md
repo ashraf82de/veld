@@ -8,11 +8,13 @@ authenticated publishing capability is available. Follow
 [the maintainer policy](../MAINTAINING.md); do not create repeated promotional
 posts or unrelated comments on other projects.
 
-## Publication status (checked 2026-10-02)
+## Publication status (checked 2026-10-10)
 
 No Hugging Face post or dataset publication has been verified.
 The connected account is `ashraf82de`; its connector has `read-repos` but no
 repository write scope or post-publishing tool. It reports a non-PRO account.
+The repository contains a reviewed dataset card and generated JSONL export;
+those files are publication inputs, not evidence of a public Hub dataset.
 
 Hugging Face documents [social posts as a PRO feature](https://huggingface.co/docs/hub/pro).
 [Personal blog articles](https://huggingface.co/docs/hub/blog-articles) require

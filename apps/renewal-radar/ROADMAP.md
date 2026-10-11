@@ -19,8 +19,10 @@
 
 - [x] Prepare reproducible installation, backup, upgrade and rollback
   instructions for the first release candidate.
-- Complete a recorded source-install, upgrade and rollback trial before
-  proposing a versioned release candidate.
+- [x] Complete a recorded source-install, side-by-side upgrade and code-only
+  rollback trial against realistic synthetic data.
+- Prepare a repository-coordinated versioned release candidate with release
+  notes, compatibility details and checksums for any published artifacts.
 
 ## Later: self-hosted web workflow
 
@@ -29,7 +31,7 @@
 - Optional reminder adapters with explicit configuration and secret handling.
 - Container and upgrade documentation after the server workflow is verified.
 
-The next concrete action is a recorded source-install, upgrade and rollback
-trial unless product feedback reveals a higher-priority defect. Language gaps
-found during that work should be reproduced and filed upstream with the exact
-Veld commit.
+The next concrete action is release-candidate preparation coordinated with the
+Veld repository's versioning and release process, unless product feedback
+reveals a higher-priority defect. Language gaps found during that work should
+be reproduced and filed upstream with the exact Veld commit.

@@ -11,16 +11,17 @@
 - Interrupted-write recovery Veld base: `419447f10f64465f560f2f52d3cc04e6820c8c2d`.
 - Data-health command Veld base: `fc14a56f6709e73c9067f6c623b0efbb4698364d`.
 - Installation guidance Veld base: `bd5c48814f5a974104e626a095afef7656fe7689`.
+- Upgrade/rollback trial Veld base: `7c18d999f079e4c94c50b6c1948b0ff5251123e5`.
 - Current state: the CLI supports its local inventory workflow and validated CSV
   import with duplicate detection and dry-run mode, canonical JSON export, and
   case-insensitive owner/category filters for list and due results, and
   validated temporary-file recovery with backup fallback. The read-only health
   command reports each companion's validity and the source normal reads select.
   Pinned source installation, backup, side-by-side upgrade and rollback steps
-  are documented without claiming a release exists.
-- Next action: complete a recorded source-install, upgrade and rollback trial
-  before proposing a versioned release candidate, unless user feedback exposes
-  a higher-priority defect.
+  are documented and verified without claiming a release exists.
+- Next action: prepare a repository-coordinated versioned release candidate
+  with release notes, compatibility details and artifact checksums, unless user
+  feedback exposes a higher-priority defect.
 - Upstream issues: none filed. No compiler or language defect has yet been
   reproduced by this application.
 
@@ -163,3 +164,30 @@ This verifies the source-build and initial-validation path, not a published
 release or external adoption. A full side-by-side upgrade and rollback trial
 remains the next product action. Linux and Windows CI are still required for
 the documentation change itself.
+
+## Recorded upgrade and rollback trial: 2026-10-11
+
+The builder installed two fresh, detached source checkouts side by side: the
+last application-changing main commit
+`406c57324515f0d459732214552602986ccf8425` and current main
+`7c18d999f079e4c94c50b6c1948b0ff5251123e5`. Both runtimes built from source
+with Go 1.25.1, both application checks were clean and each checkout passed all
+17 application tests.
+
+Using the older checkout, the builder created realistic synthetic domain and
+support-contract renewals in an external data directory. Health selected the
+valid two-record primary, and the primary plus its one-record `.bak` companion
+were copied to a separate backup directory. The current checkout reported the
+same data health without changing the primary checksum, returned the expected
+normalized owner/category query and renewed the support contract through
+2028-03-01.
+
+For the code-only rollback, the launch command was switched back to the older
+checkout without restoring data. Its health command selected the current
+two-record primary, and its list and filtered due query returned the renewal
+written by the newer checkout. The external primary and backup checksums were
+unchanged after the trial; the active `.tmp` companion was absent. This is
+synthetic compatibility and recovery evidence, not a published release or
+external user adoption. No compiler, language or application defect was
+reproduced, so no upstream issue was filed. Hosted Linux and Windows checks
+remain required before merging this record.

@@ -12,16 +12,20 @@
 - Data-health command Veld base: `fc14a56f6709e73c9067f6c623b0efbb4698364d`.
 - Installation guidance Veld base: `bd5c48814f5a974104e626a095afef7656fe7689`.
 - Upgrade/rollback trial Veld base: `7c18d999f079e4c94c50b6c1948b0ff5251123e5`.
+- Release-candidate preparation Veld base: `c6a26b38f36ae1bd5e3e747394297848d62e941d`.
 - Current state: the CLI supports its local inventory workflow and validated CSV
   import with duplicate detection and dry-run mode, canonical JSON export, and
   case-insensitive owner/category filters for list and due results, and
   validated temporary-file recovery with backup fallback. The read-only health
   command reports each companion's validity and the source normal reads select.
   Pinned source installation, backup, side-by-side upgrade and rollback steps
-  are documented and verified without claiming a release exists.
-- Next action: prepare a repository-coordinated versioned release candidate
-  with release notes, compatibility details and artifact checksums, unless user
-  feedback exposes a higher-priority defect.
+  are documented and verified. Candidate `0.1.0-rc.1` has release notes,
+  compatibility metadata, an inspectable version command and source checksums;
+  no tag or release is claimed.
+- Next action: coordinate candidate tagging and publication with the Veld
+  maintainer, then verify installation from the published assets and record
+  their URLs and checksums, unless user feedback exposes a higher-priority
+  defect.
 - Upstream issues: none filed. No compiler or language defect has yet been
   reproduced by this application.
 
@@ -191,3 +195,20 @@ synthetic compatibility and recovery evidence, not a published release or
 external user adoption. No compiler, language or application defect was
 reproduced, so no upstream issue was filed. Hosted Linux and Windows checks
 remain required before merging this record.
+
+## Recorded release-candidate preparation: 2026-10-12
+
+Candidate `0.1.0-rc.1` adds a read-only `version` command that reports the
+application version, data format `1` and unpublished-candidate status. Running
+it from an empty temporary directory produced the documented output without
+creating a data file. Release notes now cover the supported workflow, data
+compatibility, source installation, known limitations and the evidence still
+required before publication.
+
+`SOURCE_SHA256SUMS` verified every first-party Veld source file, the project
+configuration and sample CSV. The application suite passed 18 tests; the full
+local suite passed 70 Veld tests, all 25 reference evals and all nine benchmark
+smoke programs with Go 1.25.1. This prepares the candidate but does not publish
+it: no tag, GitHub release, downloadable artifact or external adoption is
+claimed. Exact-head Linux and Windows CI remain required before merging, and
+repository tagging must be coordinated with the Veld maintainer.

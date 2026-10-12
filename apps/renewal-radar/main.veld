@@ -214,6 +214,7 @@ fn usage() -> Str
       "Renewal Radar tracks contracts, licenses, subscriptions, certificates, and other expiries.",
       "",
       "Commands:",
+      "  version",
       "  add <name> <YYYY-MM-DD> [--owner=NAME] [--category=TYPE] [--notes=TEXT]",
       "  list [--owner=NAME] [--category=TYPE]",
       "  show <id>",
@@ -230,9 +231,21 @@ fn usage() -> Str
   )
 end fn
 
+fn version_text() -> Str
+  str.join(
+    [
+      "Renewal Radar 0.1.0-rc.1",
+      "Data format: 1 (compatible with earlier Renewal Radar data)",
+      "Release status: candidate; no tagged release has been published",
+    ],
+    "\n",
+  )
+end fn
+
 fn execute(args: List[Str], now_ms: Int) -> Result[Str, Str] uses env, fs
   let parsed = cli.parse(args)
   match parsed.positional
+    case ["version"] => Ok(version_text())
     case ["add", name, expiry] => add(parsed, name: name, expiry: expiry)
     case ["list"]
       let owner = normalized_filter(parsed, "owner")?
@@ -284,6 +297,11 @@ test "list and due rendering"
   expect display_value("ops") == "ops"
   expect count_text(1) == "1 renewal"
   expect count_text(2) == "2 renewals"
+end test
+
+test "release candidate version"
+  expect version_text() == "Renewal Radar 0.1.0-rc.1\nData format: 1 (compatible with earlier Renewal Radar data)\nRelease status: candidate; no tagged release has been published"
+  expect execute(["version"], 0) == Ok(version_text())
 end test
 
 test "owner and category filters"

@@ -19,6 +19,7 @@ From the Veld repository root:
 
 ```sh
 go run ./cmd/veld run apps/renewal-radar/main.veld -- help
+go run ./cmd/veld run apps/renewal-radar/main.veld -- version
 go run ./cmd/veld run apps/renewal-radar/main.veld -- add "Example domain" 2027-01-15 --owner=ops --category=domain
 go run ./cmd/veld run apps/renewal-radar/main.veld -- list
 go run ./cmd/veld run apps/renewal-radar/main.veld -- list --owner=ops --category=domain
@@ -98,4 +99,6 @@ See [PRODUCT.md](PRODUCT.md) for scope and acceptance criteria,
 [ROADMAP.md](ROADMAP.md) for planned slices, and
 [MAINTENANCE.md](MAINTENANCE.md) for the verified Veld version and handoff.
 Use [INSTALL.md](INSTALL.md) for pinned source installation, backup, upgrade and
-rollback instructions; no tagged Renewal Radar release has been published yet.
+rollback instructions. [RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md) records the
+first candidate's scope, compatibility and integrity information; no tagged
+Renewal Radar release has been published yet.

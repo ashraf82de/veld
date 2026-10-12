@@ -21,8 +21,10 @@
   instructions for the first release candidate.
 - [x] Complete a recorded source-install, side-by-side upgrade and code-only
   rollback trial against realistic synthetic data.
-- Prepare a repository-coordinated versioned release candidate with release
-  notes, compatibility details and checksums for any published artifacts.
+- [x] Prepare a repository-coordinated `0.1.0-rc.1` candidate with release
+  notes, compatibility details and a source-integrity manifest.
+- Coordinate repository tagging and publication with the Veld maintainer, then
+  record the published URL and artifact checksums. Do not tag independently.
 
 ## Later: self-hosted web workflow
 
@@ -31,7 +33,8 @@
 - Optional reminder adapters with explicit configuration and secret handling.
 - Container and upgrade documentation after the server workflow is verified.
 
-The next concrete action is release-candidate preparation coordinated with the
-Veld repository's versioning and release process, unless product feedback
-reveals a higher-priority defect. Language gaps found during that work should
-be reproduced and filed upstream with the exact Veld commit.
+The next concrete action is maintainer-coordinated candidate tagging and
+publication, followed by an installation check against the published assets,
+unless product feedback reveals a higher-priority defect. Language gaps found
+during that work should be reproduced and filed upstream with the exact Veld
+commit.

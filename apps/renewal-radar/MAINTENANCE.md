@@ -22,10 +22,11 @@
   are documented and verified. Candidate `0.1.0-rc.1` has release notes,
   compatibility metadata, an inspectable version command and source checksums;
   no tag or release is claimed.
-- Next action: coordinate candidate tagging and publication with the Veld
-  maintainer, then verify installation from the published assets and record
-  their URLs and checksums, unless user feedback exposes a higher-priority
-  defect.
+- Next action: coordinate the application-specific
+  `renewal-radar-v0.1.0-rc.1` tag and publication with the Veld maintainer,
+  then verify installation from the published assets and record their URLs and
+  checksums, unless user feedback exposes a higher-priority defect. Plain `v*`
+  tags remain reserved for Veld language releases.
 - Upstream issues: none filed. No compiler or language defect has yet been
   reproduced by this application.
 

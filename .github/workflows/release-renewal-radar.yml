@@ -1,0 +1,57 @@
+# Tag renewal-radar-vX.Y.Z on main to publish the application with a pinned Veld runtime.
+name: release-renewal-radar
+
+on:
+  push:
+    tags: ["renewal-radar-v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Verify
+        run: |
+          version="${GITHUB_REF_NAME#renewal-radar-v}"
+          grep -Fq '"Renewal Radar '"$version"'",' apps/renewal-radar/main.veld
+          sha256sum -c apps/renewal-radar/SOURCE_SHA256SUMS
+          go vet ./...
+          go test ./...
+          go run ./cmd/veld fmt --check apps/renewal-radar
+          go run ./cmd/veld test apps/renewal-radar
+      - name: Build packages
+        run: |
+          version="${GITHUB_REF_NAME#renewal-radar-v}"
+          mkdir dist
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            os="${target%/*}"; arch="${target#*/}"
+            package="renewal-radar-$version-$os-$arch"
+            root="dist/$package"
+            mkdir -p "$root/bin" "$root/apps/renewal-radar"
+            cp -R apps/renewal-radar/. "$root/apps/renewal-radar/"
+            cp LICENSE "$root/"
+            ext=""; [ "$os" = windows ] && ext=".exe"
+            CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -trimpath \
+              -ldflags "-s -w -X main.version=0.2.0-dev+renewal-radar.$version" \
+              -o "$root/bin/veld$ext" ./cmd/veld
+            if [ "$os" = windows ]; then
+              (cd dist && zip -qr "$package.zip" "$package")
+            else
+              tar -C dist -czf "dist/$package.tar.gz" "$package"
+            fi
+            rm -rf "$root"
+          done
+          (cd dist && sha256sum renewal-radar-* > SHA256SUMS)
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="${GITHUB_REF_NAME#renewal-radar-v}"
+          gh release create "$GITHUB_REF_NAME" dist/* --generate-notes \
+            --title "Renewal Radar $version"

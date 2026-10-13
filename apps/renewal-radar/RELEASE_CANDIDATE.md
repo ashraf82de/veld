@@ -45,6 +45,13 @@ and benchmark smoke tests. The publishing maintainer must record the full
 40-character commit SHA, release URL and SHA-256 checksums for every published
 artifact.
 
+The `release-renewal-radar` workflow verifies the source manifest and
+application tests again, then packages the application source with a pinned
+Veld runtime for Linux, macOS and Windows. Its release-level `SHA256SUMS` covers
+the downloadable archives. The bundled runtime identifies both its Veld
+development line and the Renewal Radar version; it is not a Veld language
+release.
+
 `SOURCE_SHA256SUMS` covers the first-party Veld source, project configuration
 and sample import file. Verify it from the repository root with:
 

@@ -1,9 +1,9 @@
 # Renewal Radar 0.1.0-rc.1
 
 Status: **prepared, not published**. No tag, GitHub release or downloadable
-artifact is claimed by this document. Repository tags publish Veld language
-binaries as well as the application source, so publication must be coordinated
-with the Veld maintainer.
+artifact is claimed by this document. Publication uses the application-specific
+tag `renewal-radar-v0.1.0-rc.1`; plain `v*` tags are reserved for Veld language
+releases. Tagging must be coordinated with the Veld maintainer.
 
 ## Candidate scope
 

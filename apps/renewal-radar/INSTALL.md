@@ -169,6 +169,7 @@ Before calling a revision a release candidate, record:
 - release notes covering data compatibility, known limitations and checksums
   for any published artifacts.
 
-Publishing a Veld repository tag also publishes the language binaries, so the
-application builder must not create a tag independently of the repository's
-reviewed release process.
+Plain `v*` tags publish Veld language binaries and are not application version
+tags. Renewal Radar uses the `renewal-radar-v*` namespace and packages its
+source with a pinned runtime. The application builder must not create either
+kind of tag independently of the repository's reviewed release process.

@@ -1,9 +1,9 @@
 # Renewal Radar 0.1.0-rc.1
 
 Status: **prepared, not published**. No tag, GitHub release or downloadable
-artifact is claimed by this document. Repository tags publish Veld language
-binaries as well as the application source, so publication must be coordinated
-with the Veld maintainer.
+artifact is claimed by this document. Publication uses the application-specific
+tag `renewal-radar-v0.1.0-rc.1`; plain `v*` tags are reserved for Veld language
+releases. Tagging must be coordinated with the Veld maintainer.
 
 ## Candidate scope
 
@@ -44,6 +44,13 @@ repository formatting, race tests, Linux and Windows CI, all reference evals
 and benchmark smoke tests. The publishing maintainer must record the full
 40-character commit SHA, release URL and SHA-256 checksums for every published
 artifact.
+
+The `release-renewal-radar` workflow verifies the source manifest and
+application tests again, then packages the application source with a pinned
+Veld runtime for Linux, macOS and Windows. Its release-level `SHA256SUMS` covers
+the downloadable archives. The bundled runtime identifies both its Veld
+development line and the Renewal Radar version; it is not a Veld language
+release.
 
 `SOURCE_SHA256SUMS` covers the first-party Veld source, project configuration
 and sample import file. Verify it from the repository root with:

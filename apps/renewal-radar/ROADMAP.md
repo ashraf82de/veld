@@ -23,8 +23,10 @@
   rollback trial against realistic synthetic data.
 - [x] Prepare a repository-coordinated `0.1.0-rc.1` candidate with release
   notes, compatibility details and a source-integrity manifest.
-- Coordinate repository tagging and publication with the Veld maintainer, then
-  record the published URL and artifact checksums. Do not tag independently.
+- Coordinate the application-specific `renewal-radar-v0.1.0-rc.1` tag and
+  publication with the Veld maintainer, then record the published URL and
+  artifact checksums. Do not tag independently; plain `v*` tags are Veld
+  language releases.
 
 ## Later: self-hosted web workflow
 

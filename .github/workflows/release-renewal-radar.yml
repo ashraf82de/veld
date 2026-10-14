@@ -1,9 +1,13 @@
-# Tag renewal-radar-vX.Y.Z on main to publish the application with a pinned Veld runtime.
+# Tag renewal-radar-vX.Y.Z on main, or push a same-SHA
+# release/renewal-radar-vX.Y.Z branch, to publish the application with a pinned
+# Veld runtime. The branch path exists for connected maintainers that can create
+# branches but cannot create tags directly.
 name: release-renewal-radar
 
 on:
   push:
     tags: ["renewal-radar-v*"]
+    branches: ["release/renewal-radar-v*"]
 
 permissions:
   contents: write
@@ -16,29 +20,52 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-      - name: Verify
+      - name: Resolve release
+        id: release
+        shell: bash
         run: |
-          version="${GITHUB_REF_NAME#renewal-radar-v}"
-          grep -Fq '"Renewal Radar '"$version"'",' apps/renewal-radar/main.veld
+          case "$GITHUB_REF" in
+            refs/tags/renewal-radar-v*)
+              version="${GITHUB_REF#refs/tags/renewal-radar-v}"
+              ;;
+            refs/heads/release/renewal-radar-v*)
+              version="${GITHUB_REF#refs/heads/release/renewal-radar-v}"
+              ;;
+            *)
+              echo "unsupported release ref: $GITHUB_REF" >&2
+              exit 1
+              ;;
+          esac
+          test -n "$version"
+          git fetch origin main --depth=1
+          test "$GITHUB_SHA" = "$(git rev-parse origin/main)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=renewal-radar-v$version" >> "$GITHUB_OUTPUT"
+      - name: Verify
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          grep -Fq '"Renewal Radar '"$VERSION"'",' apps/renewal-radar/main.veld
           sha256sum -c apps/renewal-radar/SOURCE_SHA256SUMS
           go vet ./...
           go test ./...
           go run ./cmd/veld fmt --check apps/renewal-radar
           go run ./cmd/veld test apps/renewal-radar
       - name: Build packages
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
         run: |
-          version="${GITHUB_REF_NAME#renewal-radar-v}"
           mkdir dist
           for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
             os="${target%/*}"; arch="${target#*/}"
-            package="renewal-radar-$version-$os-$arch"
+            package="renewal-radar-$VERSION-$os-$arch"
             root="dist/$package"
             mkdir -p "$root/bin" "$root/apps/renewal-radar"
             cp -R apps/renewal-radar/. "$root/apps/renewal-radar/"
             cp LICENSE "$root/"
             ext=""; [ "$os" = windows ] && ext=".exe"
             CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -trimpath \
-              -ldflags "-s -w -X main.version=0.2.0-dev+renewal-radar.$version" \
+              -ldflags "-s -w -X main.version=0.2.0-dev+renewal-radar.$VERSION" \
               -o "$root/bin/veld$ext" ./cmd/veld
             if [ "$os" = windows ]; then
               (cd dist && zip -qr "$package.zip" "$package")
@@ -51,7 +78,8 @@ jobs:
       - name: Publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
         run: |
-          version="${GITHUB_REF_NAME#renewal-radar-v}"
-          gh release create "$GITHUB_REF_NAME" dist/* --generate-notes \
-            --title "Renewal Radar $version"
+          gh release create "$RELEASE_TAG" dist/* --generate-notes \
+            --target "$GITHUB_SHA" --title "Renewal Radar $VERSION"

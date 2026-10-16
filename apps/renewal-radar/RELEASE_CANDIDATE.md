@@ -1,9 +1,14 @@
-# Renewal Radar 0.1.0-rc.1
+# Renewal Radar 0.1.0-rc.2
 
-Status: **prepared, not published**. No tag, GitHub release or downloadable
-artifact is claimed by this document. Publication uses the application-specific
-tag `renewal-radar-v0.1.0-rc.1`; plain `v*` tags are reserved for Veld language
+Status: **prepared, not published**. Publication uses the application-specific
+tag `renewal-radar-v0.1.0-rc.2`; plain `v*` tags are reserved for Veld language
 releases. Tagging must be coordinated with the Veld maintainer.
+
+The first published candidate, [0.1.0-rc.1](https://github.com/ashraf82de/veld/releases/tag/renewal-radar-v0.1.0-rc.1),
+passed its release workflow and downloadable Linux installation trial, but its
+version output incorrectly claimed that no tagged release existed and GitHub
+did not mark it as a prerelease. Candidate rc.2 corrects both metadata defects;
+it does not change data format or application behavior.
 
 ## Candidate scope
 
@@ -22,8 +27,9 @@ version and data-format compatibility without reading or writing the data file.
 - The side-by-side trial recorded in [MAINTENANCE.md](MAINTENANCE.md) verified
   that the previous app-capable checkout could read a renewal written by the
   current checkout after a code-only rollback.
-- Installation requires Git and Go 1.22 or newer to build the Veld runtime.
-  Follow [INSTALL.md](INSTALL.md) with a reviewed full commit SHA.
+- Source installation requires Git and Go 1.22 or newer to build the Veld
+  runtime. Published packages include a pinned runtime. Follow
+  [INSTALL.md](INSTALL.md).
 - Stop all writers before backup, upgrade, rollback or manual restore. The
   application supports one writer and does not provide locking.
 
@@ -34,8 +40,8 @@ version and data-format compatibility without reading or writing the data file.
   secrets.
 - The application has recorded synthetic usability, installation, upgrade and
   rollback trials, but no external-user adoption evidence yet.
-- The application is distributed as source inside the Veld repository. No
-  standalone Renewal Radar binary is currently produced.
+- Published packages contain the Veld source application and a pinned runtime;
+  they are not standalone native rewrites of the application.
 
 ## Verification required for publication
 
@@ -43,7 +49,8 @@ The exact candidate head must pass application check, all application tests,
 repository formatting, race tests, Linux and Windows CI, all reference evals
 and benchmark smoke tests. The publishing maintainer must record the full
 40-character commit SHA, release URL and SHA-256 checksums for every published
-artifact.
+artifact. Versions containing a SemVer prerelease suffix such as `-rc.2` must
+be marked as prereleases in GitHub.
 
 The `release-renewal-radar` workflow verifies the source manifest and
 application tests again, then packages the application source with a pinned
@@ -59,5 +66,5 @@ and sample import file. Verify it from the repository root with:
 sha256sum -c apps/renewal-radar/SOURCE_SHA256SUMS
 ```
 
-The manifest is source-integrity metadata, not a substitute for checksums of
-future downloadable artifacts.
+The manifest is source-integrity metadata, not a substitute for the published
+archive checksums.

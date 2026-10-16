@@ -100,5 +100,6 @@ See [PRODUCT.md](PRODUCT.md) for scope and acceptance criteria,
 [MAINTENANCE.md](MAINTENANCE.md) for the verified Veld version and handoff.
 Use [INSTALL.md](INSTALL.md) for pinned source installation, backup, upgrade and
 rollback instructions. [RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md) records the
-first candidate's scope, compatibility and integrity information; no tagged
-Renewal Radar release has been published yet.
+current candidate's scope, compatibility and integrity information. Published
+candidates and their checksums are available from the
+[GitHub releases page](https://github.com/ashraf82de/veld/releases).

@@ -23,10 +23,12 @@
   rollback trial against realistic synthetic data.
 - [x] Prepare a repository-coordinated `0.1.0-rc.1` candidate with release
   notes, compatibility details and a source-integrity manifest.
-- Coordinate the application-specific `renewal-radar-v0.1.0-rc.1` tag and
-  publication with the Veld maintainer, then record the published URL and
-  artifact checksums. Do not tag independently; plain `v*` tags are Veld
-  language releases.
+- [x] Publish `renewal-radar-v0.1.0-rc.1` and verify the Linux AMD64 package,
+  application checks, 18 tests, empty-inventory health behavior and archive
+  checksum from the downloadable asset.
+- Publish corrected candidate `renewal-radar-v0.1.0-rc.2` with truthful
+  in-package version text and GitHub prerelease metadata, then repeat the
+  published-asset installation check.
 
 ## Later: self-hosted web workflow
 
@@ -35,8 +37,7 @@
 - Optional reminder adapters with explicit configuration and secret handling.
 - Container and upgrade documentation after the server workflow is verified.
 
-The next concrete action is maintainer-coordinated candidate tagging and
-publication, followed by an installation check against the published assets,
-unless product feedback reveals a higher-priority defect. Language gaps found
+The next concrete action is maintainer-coordinated rc.2 publication and a
+published-asset installation check that closes issue #28. Language gaps found
 during that work should be reproduced and filed upstream with the exact Veld
 commit.

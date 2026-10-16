@@ -1,9 +1,11 @@
 # Install, upgrade and roll back Renewal Radar
 
-Renewal Radar is currently distributed as Veld source in this repository. A
-tagged Renewal Radar release has not been published yet. For a reproducible
-installation, use a full Git commit SHA from a reviewed release candidate; do
-not deploy a moving `main` checkout or `go install ...@latest`.
+Renewal Radar is distributed as Veld source with a pinned Veld runtime in
+versioned release archives. The first candidate is available from the
+[GitHub releases page](https://github.com/ashraf82de/veld/releases); verify the
+archive against the release's `SHA256SUMS` before extracting it. Source builds
+remain supported from a reviewed full Git commit SHA. Do not deploy a moving
+`main` checkout or use `go install ...@latest`.
 
 The application stores data separately from its source. Keep the checkout and
 the data directory in different locations so code can be upgraded or rolled
@@ -20,6 +22,28 @@ back without moving the inventory.
 Linux and Windows run the full repository application tests in CI. The commands
 below build from source so the runtime and application come from the same pinned
 repository revision.
+
+## Install a published package
+
+Download the archive for the operating system and architecture together with
+`SHA256SUMS` from the same release. Verify the archive before extraction:
+
+```sh
+sha256sum -c SHA256SUMS --ignore-missing
+```
+
+Extract the archive and keep its `bin/veld` (or `bin/veld.exe`) together
+with `apps/renewal-radar`. Run the packaged check, tests and initial health
+command before adding data:
+
+```sh
+./bin/veld check apps/renewal-radar --json
+./bin/veld test apps/renewal-radar --json
+./bin/veld run apps/renewal-radar/main.veld -- health --file="$PWD/data/renewals.json"
+```
+
+The first `health` report should select `empty inventory` and must not create
+a data file.
 
 ## Install from a pinned revision
 

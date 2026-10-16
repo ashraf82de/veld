@@ -234,9 +234,9 @@ end fn
 fn version_text() -> Str
   str.join(
     [
-      "Renewal Radar 0.1.0-rc.1",
+      "Renewal Radar 0.1.0-rc.2",
       "Data format: 1 (compatible with earlier Renewal Radar data)",
-      "Release status: candidate; no tagged release has been published",
+      "Release status: release candidate",
     ],
     "\n",
   )
@@ -300,7 +300,7 @@ test "list and due rendering"
 end test
 
 test "release candidate version"
-  expect version_text() == "Renewal Radar 0.1.0-rc.1\nData format: 1 (compatible with earlier Renewal Radar data)\nRelease status: candidate; no tagged release has been published"
+  expect version_text() == "Renewal Radar 0.1.0-rc.2\nData format: 1 (compatible with earlier Renewal Radar data)\nRelease status: release candidate"
   expect execute(["version"], 0) == Ok(version_text())
 end test
 

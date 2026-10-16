@@ -81,5 +81,10 @@ jobs:
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
           VERSION: ${{ steps.release.outputs.version }}
         run: |
+          release_flags=()
+          case "$VERSION" in
+            *-*) release_flags+=(--prerelease) ;;
+          esac
           gh release create "$RELEASE_TAG" dist/* --generate-notes \
-            --target "$GITHUB_SHA" --title "Renewal Radar $VERSION"
+            --target "$GITHUB_SHA" --title "Renewal Radar $VERSION" \
+            "${release_flags[@]}"

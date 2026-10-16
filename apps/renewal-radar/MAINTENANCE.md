@@ -19,14 +19,13 @@
   validated temporary-file recovery with backup fallback. The read-only health
   command reports each companion's validity and the source normal reads select.
   Pinned source installation, backup, side-by-side upgrade and rollback steps
-  are documented and verified. Candidate `0.1.0-rc.1` has release notes,
-  compatibility metadata, an inspectable version command and source checksums;
-  no tag or release is claimed.
-- Next action: coordinate the application-specific
-  `renewal-radar-v0.1.0-rc.1` tag and publication with the Veld maintainer,
-  then verify installation from the published assets and record their URLs and
-  checksums, unless user feedback exposes a higher-priority defect. Plain `v*`
-  tags remain reserved for Veld language releases.
+  are documented and verified. Candidate `0.1.0-rc.1` was published and its
+  Linux AMD64 package passed an installation trial, exposing inaccurate
+  in-package publication text and missing GitHub prerelease metadata.
+- Next action: publish corrected candidate `renewal-radar-v0.1.0-rc.2` after
+  review and exact-head CI, then verify its downloadable package, checksums,
+  version output and GitHub prerelease metadata. Plain `v*` tags remain
+  reserved for Veld language releases.
 - Upstream issues: none filed. No compiler or language defect has yet been
   reproduced by this application.
 
@@ -213,3 +212,20 @@ smoke programs with Go 1.25.1. This prepares the candidate but does not publish
 it: no tag, GitHub release, downloadable artifact or external adoption is
 claimed. Exact-head Linux and Windows CI remain required before merging, and
 repository tagging must be coordinated with the Veld maintainer.
+
+## Recorded published-package trial: 2026-10-15
+
+The maintainer published
+[`renewal-radar-v0.1.0-rc.1`](https://github.com/ashraf82de/veld/releases/tag/renewal-radar-v0.1.0-rc.1)
+from exact main `6168b7a4d1a691073a7ed7162a80bc89da90d0ed`. Release workflow
+[38693295420](https://github.com/ashraf82de/veld/actions/runs/38693295420)
+passed source verification, application tests, cross-platform packaging and
+publication.
+
+The downloaded Linux AMD64 archive matched SHA-256
+`fb6c437d2e1b83127facc5a5bc90b218fb3c4ccdfb40ea3ec440212c54ff62b6`.
+Its source manifest, application check, all 18 tests and read-only
+empty-inventory health trial passed. The trial then found that the packaged
+`version` output still said no tag had been published and that GitHub recorded
+the RC as a non-prerelease. Issue #28 tracks the correction. This is release
+verification evidence, not external adoption.

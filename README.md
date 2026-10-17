@@ -139,6 +139,14 @@ rather than panics, and Int/Float/Bool arithmetic runs unboxed.
 | 60,000 string appends                   | 0.27 s  |
 | 16 x `fib(30)` with `task.parallel_map` | 0.24 s  |
 
+These are historical measurements from commit
+`fbf6193cb2f28b21ddef39e0e8288229cd54a473` (2026-09-29). The original run
+did not record its hardware, Go version, warm-up count or timing command, so
+the numbers are illustrative rather than a reproducible performance baseline.
+CI executes every program as a smoke test but does not treat wall-clock time as
+a regression threshold. New performance claims must record the source commit,
+hardware, command and methodology.
+
 Lists and maps are persistent (structure-sharing) values, so updates are
 O(log n), slices are O(1), and values are safe to share between threads. When a
 local `var` is provably the only holder of a list or string, `set xs =

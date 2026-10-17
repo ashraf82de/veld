@@ -1,14 +1,15 @@
 # Renewal Radar 0.1.0-rc.2
 
-Status: **prepared, not published**. Publication uses the application-specific
-tag `renewal-radar-v0.1.0-rc.2`; plain `v*` tags are reserved for Veld language
-releases. Tagging must be coordinated with the Veld maintainer.
+Status: **published and verified**. The application-specific tag is
+[`renewal-radar-v0.1.0-rc.2`](https://github.com/ashraf82de/veld/releases/tag/renewal-radar-v0.1.0-rc.2);
+plain `v*` tags remain reserved for Veld language releases.
 
 The first published candidate, [0.1.0-rc.1](https://github.com/ashraf82de/veld/releases/tag/renewal-radar-v0.1.0-rc.1),
 passed its release workflow and downloadable Linux installation trial, but its
 version output incorrectly claimed that no tagged release existed and GitHub
-did not mark it as a prerelease. Candidate rc.2 corrects both metadata defects;
-it does not change data format or application behavior.
+did not mark it as a prerelease. Candidate rc.2 corrects both metadata defects
+and is marked as a GitHub prerelease; it does not change data format or
+application behavior.
 
 ## Candidate scope
 
@@ -43,14 +44,16 @@ version and data-format compatibility without reading or writing the data file.
 - Published packages contain the Veld source application and a pinned runtime;
   they are not standalone native rewrites of the application.
 
-## Verification required for publication
+## Publication verification
 
-The exact candidate head must pass application check, all application tests,
-repository formatting, race tests, Linux and Windows CI, all reference evals
-and benchmark smoke tests. The publishing maintainer must record the full
-40-character commit SHA, release URL and SHA-256 checksums for every published
-artifact. Versions containing a SemVer prerelease suffix such as `-rc.2` must
-be marked as prereleases in GitHub.
+The exact candidate head `4ac8088235fa9b0c0d933091766b9e2e97fc741b`
+passed application check, all application tests, repository formatting, race
+tests, Linux and Windows CI, all reference evals and benchmark smoke tests.
+Release workflow [39006224073](https://github.com/ashraf82de/veld/actions/runs/39006224073)
+then repeated source and application verification, built all six packages and
+published the release with GitHub `prerelease: true`. Full artifact digests and
+the downloaded Linux AMD64 trial are recorded in
+[MAINTENANCE.md](MAINTENANCE.md).
 
 The `release-renewal-radar` workflow verifies the source manifest and
 application tests again, then packages the application source with a pinned

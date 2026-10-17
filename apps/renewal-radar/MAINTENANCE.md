@@ -19,13 +19,12 @@
   validated temporary-file recovery with backup fallback. The read-only health
   command reports each companion's validity and the source normal reads select.
   Pinned source installation, backup, side-by-side upgrade and rollback steps
-  are documented and verified. Candidate `0.1.0-rc.1` was published and its
-  Linux AMD64 package passed an installation trial, exposing inaccurate
-  in-package publication text and missing GitHub prerelease metadata.
-- Next action: publish corrected candidate `renewal-radar-v0.1.0-rc.2` after
-  review and exact-head CI, then verify its downloadable package, checksums,
-  version output and GitHub prerelease metadata. Plain `v*` tags remain
-  reserved for Veld language releases.
+  are documented and verified. Corrected candidate `0.1.0-rc.2` is published
+  as a GitHub prerelease, and its Linux AMD64 package passed checksum, source
+  integrity, application-check, test, version and empty-health verification.
+- Next action: collect a recorded usability trial from an independent operator
+  and triage concrete product feedback before starting the later web workflow.
+  Plain `v*` tags remain reserved for Veld language releases.
 - Upstream issues: none filed. No compiler or language defect has yet been
   reproduced by this application.
 
@@ -229,3 +228,32 @@ empty-inventory health trial passed. The trial then found that the packaged
 `version` output still said no tag had been published and that GitHub recorded
 the RC as a non-prerelease. Issue #28 tracks the correction. This is release
 verification evidence, not external adoption.
+
+## Recorded corrected-package trial: 2026-10-17
+
+The builder published
+[`renewal-radar-v0.1.0-rc.2`](https://github.com/ashraf82de/veld/releases/tag/renewal-radar-v0.1.0-rc.2)
+from exact main `4ac8088235fa9b0c0d933091766b9e2e97fc741b`. Release workflow
+[39006224073](https://github.com/ashraf82de/veld/actions/runs/39006224073)
+passed the exact-main guard, source verification, application tests,
+cross-platform packaging and publication. GitHub records the release with
+`prerelease: true`.
+
+Published artifact digests reported by GitHub are:
+
+| Artifact | SHA-256 |
+|----------|---------|
+| `renewal-radar-0.1.0-rc.2-darwin-amd64.tar.gz` | `bc46f2e1ba23891ce0ff499d4a4ebace3c068dd545bbe0c2e19d2fa9a3b1a30e` |
+| `renewal-radar-0.1.0-rc.2-darwin-arm64.tar.gz` | `ff039674d1e0805ae52730819caa64917fce1d697889b391bc57515c410583f5` |
+| `renewal-radar-0.1.0-rc.2-linux-amd64.tar.gz` | `35762143c58c4796013bfd29a4dd1bd9a731d72ccc10a6d3b67a390d990efe50` |
+| `renewal-radar-0.1.0-rc.2-linux-arm64.tar.gz` | `85bef18a7a77251e001633dfa4e57e42a4b6b88b0673b25a4bb4534d32fc4c22` |
+| `renewal-radar-0.1.0-rc.2-windows-amd64.zip` | `c5bd156f20d2e7dc08ca7a58e73e9705287e1986eb09bbaf61e620729672f3b6` |
+| `renewal-radar-0.1.0-rc.2-windows-arm64.zip` | `f37e330ba481e5a8534eaeeae34adb8d368efd7a0b689079bd7dac14674c6a54` |
+| `SHA256SUMS` | `600077d2ea6aa0208c056c6de18b68e05abcf6d4e675fcf06d643f3d9255b205` |
+
+The downloaded Linux AMD64 archive matched the published `SHA256SUMS`. Its
+source manifest and application check passed, all 18 application tests passed,
+and `version` reported `0.1.0-rc.2` with `Release status: release candidate`.
+An empty-inventory `health` invocation selected an empty inventory and created
+no data file. This closes the release-metadata reproduction in issue #28; it
+is release verification evidence, not external-user adoption.

@@ -26,9 +26,11 @@
 - [x] Publish `renewal-radar-v0.1.0-rc.1` and verify the Linux AMD64 package,
   application checks, 18 tests, empty-inventory health behavior and archive
   checksum from the downloadable asset.
-- Publish corrected candidate `renewal-radar-v0.1.0-rc.2` with truthful
+- [x] Publish corrected candidate `renewal-radar-v0.1.0-rc.2` with truthful
   in-package version text and GitHub prerelease metadata, then repeat the
   published-asset installation check.
+- Collect a recorded usability trial from an independent operator and turn
+  concrete findings into application fixes or upstream reports.
 
 ## Later: self-hosted web workflow
 
@@ -37,7 +39,7 @@
 - Optional reminder adapters with explicit configuration and secret handling.
 - Container and upgrade documentation after the server workflow is verified.
 
-The next concrete action is maintainer-coordinated rc.2 publication and a
-published-asset installation check that closes issue #28. Language gaps found
-during that work should be reproduced and filed upstream with the exact Veld
-commit.
+The next concrete action is an independent recorded usability trial of the
+published CLI. Language gaps found during that work should be reproduced and
+filed upstream with the exact Veld commit; product findings belong in the
+application backlog.

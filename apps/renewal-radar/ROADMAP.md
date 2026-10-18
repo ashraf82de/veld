@@ -30,7 +30,10 @@
   in-package version text and GitHub prerelease metadata, then repeat the
   published-asset installation check.
 - Collect a recorded usability trial from an independent operator and turn
-  concrete findings into application fixes or upstream reports.
+  concrete findings into application fixes or upstream reports. Use the
+  release-pinned, privacy-safe protocol in
+  [`USABILITY_TRIAL.md`](USABILITY_TRIAL.md); preparing the protocol is not a
+  completed trial.
 
 ## Later: self-hosted web workflow
 

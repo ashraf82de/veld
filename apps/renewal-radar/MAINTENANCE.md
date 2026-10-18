@@ -23,8 +23,10 @@
   as a GitHub prerelease, and its Linux AMD64 package passed checksum, source
   integrity, application-check, test, version and empty-health verification.
 - Next action: collect a recorded usability trial from an independent operator
-  and triage concrete product feedback before starting the later web workflow.
-  Plain `v*` tags remain reserved for Veld language releases.
+  with [`USABILITY_TRIAL.md`](USABILITY_TRIAL.md), then triage concrete product
+  feedback before starting the later web workflow. Preparing the protocol is
+  not external-user evidence. Plain `v*` tags remain reserved for Veld language
+  releases.
 - Upstream issues: none filed. No compiler or language defect has yet been
   reproduced by this application.
 

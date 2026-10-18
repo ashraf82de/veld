@@ -99,7 +99,9 @@ See [PRODUCT.md](PRODUCT.md) for scope and acceptance criteria,
 [ROADMAP.md](ROADMAP.md) for planned slices, and
 [MAINTENANCE.md](MAINTENANCE.md) for the verified Veld version and handoff.
 Use [INSTALL.md](INSTALL.md) for pinned source installation, backup, upgrade and
-rollback instructions. [RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md) records the
-current candidate's scope, compatibility and integrity information. Published
-candidates and their checksums are available from the
+rollback instructions. [USABILITY_TRIAL.md](USABILITY_TRIAL.md) is the
+privacy-safe protocol for an independent operator trial.
+[RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md) records the current candidate's
+scope, compatibility and integrity information. Published candidates and their
+checksums are available from the
 [GitHub releases page](https://github.com/ashraf82de/veld/releases).
